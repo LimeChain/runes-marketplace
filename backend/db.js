@@ -1,5 +1,6 @@
 // @ts-check
 import { DatabaseSync, StatementSync } from 'node:sqlite'
+import "./types.js"
 
 const database = new DatabaseSync('marketplace.db')
 
@@ -11,28 +12,30 @@ let
   /** @type {StatementSync} */ getListingsForTokenQuery
 
 export function initDb() {
-  // TODO: remove
-  database.exec(`DROP TABLE IF EXISTS listing`)
+  // database.exec(`DROP TABLE IF EXISTS listing`)
   database.exec(`
     CREATE TABLE IF NOT EXISTS listing(
       id TEXT PRIMARY KEY,
+      rawTx TEXT,
       prevOut TEXT,
-      rune_id TEXT,
-      seller_pub_key TEXT,
-      exchange_rate INTEGER,
-      token_amount INTEGER,
-      min_token_threshold INTEGER,
+      runeId TEXT,
+      sellerPubKey TEXT,
+      sellerAddress TEXT,
+      divisibility INTEGER,
+      exchangeRate INTEGER,
+      tokenAmount INTEGER,
+      minTokenThreshold INTEGER,
       status TEXT CHECK( status IN ('not_broadcasted', 'open', 'closed') )
     );
-    CREATE INDEX IF NOT EXISTS idx_listing_rune_id ON listing(rune_id);
+    CREATE INDEX IF NOT EXISTS idx_listing_rune_id ON listing(runeId);
   `)
   getListingsQuery = database.prepare('SELECT * from listing')
   createListingQuery = database.prepare(`INSERT INTO listing (
-    id, prevOut, rune_id, seller_pub_key, exchange_rate, token_amount, min_token_threshold, status
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`)
+    id, rawTx, prevOut, runeId, sellerPubKey, sellerAddress, divisibility, exchangeRate, tokenAmount, minTokenThreshold, status
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
   closeListingQuery = database.prepare(`UPDATE listing SET status='closed' WHERE id = ?`)
-  getTokensQuery = database.prepare(`SELECT DISTINCT rune_id from listing WHERE status is not 'closed'`) // TODO: group and order by volume? (and display it)
-  getListingsForTokenQuery = database.prepare(`SELECT * FROM listing WHERE rune_id = ? AND status is not 'closed'`)
+  getTokensQuery = database.prepare(`SELECT runeId as id, min(exchangeRate) as price from listing WHERE status is not 'closed' GROUP BY runeId`)
+  getListingsForTokenQuery = database.prepare(`SELECT * FROM listing WHERE runeId = ? AND status is not 'closed'`)
 }
 
 /**
@@ -43,23 +46,33 @@ export function getListings() {
   return /** @type {Listing[]} */ (getListingsQuery.all())
 }
 
-// TODO: runeID should in another table?
+// TODO: runeID in another table?
 /**
  * Creates a new listing
  * 
- * @param {string} id 
- * @param {string} prevOut 
- * @param {string} runeId 
- * @param {string} sellerPubKey 
- * @param {number} exchangeRate 
- * @param {number} tokenAmount 
- * @param {number} minTokenThreshold 
+ * @param {Listing} listing
  * @param {ListingStatus} status 
  * 
  * @returns {boolean} if the insert was successful
  */
-export function createListing(id, prevOut, runeId, sellerPubKey, exchangeRate, tokenAmount, minTokenThreshold, status) {
-  const result = createListingQuery.run(id, prevOut, runeId, sellerPubKey, exchangeRate, tokenAmount, minTokenThreshold, status)
+export function createListing(listing, status) {
+  // Check that address is computed
+  if (!listing.sellerAddress) {
+    return false
+  }
+
+  const result = createListingQuery.run(
+    listing.id,
+    listing.rawTx,
+    listing.prevOut,
+    listing.runeId,
+    listing.sellerPubKey,
+    listing.sellerAddress,
+    listing.divisibility,
+    listing.exchangeRate,
+    listing.tokenAmount,
+    listing.minTokenThreshold,
+    status)
   return result.changes === 1
 }
 

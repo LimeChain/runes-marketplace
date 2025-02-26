@@ -11,29 +11,28 @@ import {
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Slider } from "@/components/ui/slider"
+import { encodeLEB128, Listing, Tx } from '@/lib/utils'
+import { createBuyTx, getInstance } from '@/lib/contract-handler'
+import { useWalletStore } from '@/store/useWalletStore'
 
 const ibmPlexMono = IBM_Plex_Mono({ subsets: ['latin'], weight: ['400'] })
 
 interface BuyModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  tokenName: string
-  amount: string
-  priceInSats: string
-  priceInUSD: string
+  listing: Listing,
 }
 
 export function BuyModal({ 
   open, 
   onOpenChange, 
-  tokenName, 
-  amount, 
-  priceInSats, 
-  priceInUSD 
+  listing
 }: BuyModalProps) {
-  const [selectedAmount, setSelectedAmount] = useState(40000)
-  const maxAmount = parseInt(amount.replace(/,/g, ''))
-  const balance = 0.005792
+  const amount = listing.tokenAmount / (10 ** listing.divisibility)
+  const threshold = listing.minTokenThreshold / (10 ** listing.divisibility)
+  const [selectedAmount, setSelectedAmount] = useState(amount)
+  const { privateKey, address } = useWalletStore()
+  const balance = 0 // TODO: get from wallet
 
   const percentages = [
     { label: '25%', value: 25 },
@@ -43,17 +42,35 @@ export function BuyModal({
   ]
 
   const handlePercentageClick = (percentage: number) => {
-    setSelectedAmount((maxAmount * percentage) / 100)
+    setSelectedAmount((amount * percentage) / 100)
   }
 
-  const serviceFeeRate = 0.005 // 0.5%
-  const networkFeePerVbyte = 7 // sats/vB
+  const buyListing = async () => {
+    const runeIdParams = listing.runeId.toString().split(':').map(e => BigInt(e))
+    const runeId = `00${encodeLEB128(runeIdParams[0])}${encodeLEB128(runeIdParams[1])}`
+
+    const instance = await getInstance(listing.sellerPubKey, listing.minTokenThreshold, runeId)
+
+    // Get listing tx info
+    const txResponse = await fetch(`/api/tx/${listing.id}`)
+    const txData = await txResponse.json();
+    const prevTx: Tx = txData.transaction
+
+    const response = await fetch(`/api/outputs/${address}`)
+    const data = await response.json()
+    const feeOutput = data.find((out: any) => Object.keys(out.runes).length === 0 && out.value > 5000 && out.value < 100_000)
+    
+    const scriptAmount = BigInt(selectedAmount * (10 ** listing.divisibility))
+    const [tx, witnesses] = await createBuyTx(txData.txid, prevTx, feeOutput, listing.sellerPubKey, privateKey!, runeId, scriptAmount, BigInt(listing.tokenAmount), BigInt(listing.exchangeRate), instance)
+    console.log(tx.uncheckedSerialize(), witnesses)
+  }
+
+  const networkFeePerVbyte = 1 // sats/vB
   const estimatedVbytes = 300
 
-  const totalValue = selectedAmount * parseInt(priceInSats)
-  const serviceFee = Math.floor(totalValue * serviceFeeRate)
+  const totalValue = selectedAmount * listing.exchangeRate
   const networkFee = estimatedVbytes * networkFeePerVbyte
-  const total = totalValue + serviceFee + networkFee
+  const total = totalValue + networkFee
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -73,12 +90,12 @@ export function BuyModal({
         <div className="space-y-6 pt-4">
           <div className="flex justify-between items-start">
             <div>
-              <div className="text-[#a7afc0] text-sm">{tokenName}</div>
+              <div className="text-[#a7afc0] text-sm">{listing.runeName}</div>
               <div className={`${ibmPlexMono.className} text-2xl`}>{amount}</div>
             </div>
             <div className="text-right">
-              <div className={`${ibmPlexMono.className}`}>{priceInSats}</div>
-              <div className={`${ibmPlexMono.className} text-[#a7afc0]`}>{priceInUSD}</div>
+              <div className={`${ibmPlexMono.className}`}>{listing.exchangeRate} sats</div>
+              <div className={`${ibmPlexMono.className} text-[#a7afc0]`}>${listing.exchangeRate / 1000}</div>
             </div>
           </div>
 
@@ -90,7 +107,7 @@ export function BuyModal({
                   key={p.value}
                   onClick={() => handlePercentageClick(p.value)}
                   className={`px-3 py-1 rounded text-sm ${
-                    selectedAmount === (maxAmount * p.value) / 100
+                    selectedAmount === (amount * p.value) / 100
                       ? 'bg-[#ff7531] text-white'
                       : 'bg-[#2e343c] text-[#a7afc0] hover:text-white'
                   }`}
@@ -107,17 +124,24 @@ export function BuyModal({
               <Slider
                 value={[selectedAmount]}
                 onValueChange={([value]) => setSelectedAmount(value)}
-                max={maxAmount}
-                step={1000}
+                onValueCommit={([value]) => {
+                  if(value !== amount && value > amount - threshold) {
+                    // TODO: show message
+                    setSelectedAmount(amount - threshold)
+                  }
+                }}
+                max={amount}
+                step={1 / (10 ** listing.divisibility)}
                 className="my-4"
               />
+
               <div className="flex justify-between text-sm">
                 <div className="flex items-center gap-1">
                   <span className="text-[#a7afc0]">Balance: </span>
                   <span className={ibmPlexMono.className}>{balance} BTC</span>
                 </div>
                 <button 
-                  onClick={() => setSelectedAmount(maxAmount)}
+                  onClick={() => setSelectedAmount(amount)}
                   className="text-[#ff7531] hover:text-[#ff7531]/90"
                 >
                   MAX
@@ -129,7 +153,7 @@ export function BuyModal({
               <span>Minimum order threshold</span>
               <span className="text-xs border border-[#2e343c] rounded-full h-4 w-4 inline-flex items-center justify-center">?</span>
               <span className="ml-auto">
-                10% = 4,000 <span className={ibmPlexMono.className}>NAME</span>
+                {threshold} <span className={ibmPlexMono.className}>{listing.runeName}</span>
               </span>
             </div>
 
@@ -138,18 +162,7 @@ export function BuyModal({
                 <span>Total Value</span>
                 <div className="text-right">
                   <div>{totalValue.toLocaleString()} sats</div>
-                  <div className="text-[#a7afc0]">$196</div>
-                </div>
-              </div>
-              
-              <div className="flex justify-between">
-                <div className="flex items-center gap-2">
-                  <span>Service Fee</span>
-                  <span className="bg-[#2e343c] px-2 rounded text-xs">0.5%</span>
-                </div>
-                <div className="text-right">
-                  <div>{serviceFee.toLocaleString()} sats</div>
-                  <div className="text-[#a7afc0]">$9.80</div>
+                  <div className="text-[#a7afc0]">${(totalValue / 1000).toFixed(2)}</div>
                 </div>
               </div>
               
@@ -180,6 +193,7 @@ export function BuyModal({
           <div className="space-y-3 pt-4">
             <Button 
               className="w-full bg-[#ff7531] hover:bg-[#ff7531]/90 text-white rounded-full"
+              onClick={() => buyListing()}
             >
               Buy
             </Button>

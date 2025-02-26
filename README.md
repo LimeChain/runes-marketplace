@@ -29,4 +29,7 @@ npm run start
 
 ## Run the frontend
 
-> TODO
+```bash
+cd frontend
+npm run dev
+```

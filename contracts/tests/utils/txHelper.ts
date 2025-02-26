@@ -283,6 +283,5 @@ export function encodeLEB128(value: bigint) {
         }
         bytes.push(byte)
     }
-    // Convert array to Buffer
     return toHexString(bytes)
 }

@@ -1,8 +1,8 @@
 "use client"
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { IBM_Plex_Mono } from 'next/font/google'
-import { Search, Check, ArrowLeft, HelpCircle } from 'lucide-react'
+import { Search, Check, HelpCircle } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -11,6 +11,9 @@ import {
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { useWalletStore } from "@/store/useWalletStore"
+import { encodeLEB128, Token } from '@/lib/utils'
+import { createInstance, createSellOrderTx } from '@/lib/contract-handler'
 
 const ibmPlexMono = IBM_Plex_Mono({ subsets: ['latin'], weight: ['400'] })
 
@@ -19,26 +22,82 @@ interface ListTokenModalProps {
   onOpenChange: (open: boolean) => void
 }
 
-const tokens = [
-  { id: 1, name: "Token Name", symbol: "NAME", amount: "80,000" },
-  { id: 2, name: "Token Name", symbol: "NAME", amount: "10,000" },
-  { id: 3, name: "Token Name", symbol: "NAME", amount: "10,000" },
-  { id: 4, name: "Token Name", symbol: "NAME", amount: "10,000" },
-]
-
 export function ListTokenModal({ open, onOpenChange }: ListTokenModalProps) {
   const [step, setStep] = useState(1)
   const [searchQuery, setSearchQuery] = useState("")
-  const [selectedToken, setSelectedToken] = useState<typeof tokens[0] | null>(null)
-  const [amount, setAmount] = useState("40000")
+  const [selectedToken, setSelectedToken] = useState<Token | null>(null)
+  const [amount, setAmount] = useState("0")
   const [priceInSats, setPriceInSats] = useState("7")
   const [threshold, setThreshold] = useState(10)
+  const [tokens, setTokens] = useState<Token[]>([])
+  const { privateKey, address } = useWalletStore()
 
-  const handleNext = () => {
+  useEffect(() => {
+    const fetchTokens = async () => {
+      try {
+        const response = await fetch(`/api/address/${address}/tokens`)
+        const data = await response.json()
+
+        setTokens(data)
+      } catch (err) {
+        console.error(err)
+      }
+    }
+    if (address) {
+      fetchTokens()
+    }
+  }, [])
+
+  const handleNext = async () => {
     if (step === 1 && selectedToken) {
+      setAmount(selectedToken.amount || "0")
       setStep(2)
     } else if (step === 2) {
       setStep(3)
+    } else if (step === 3) {
+      if (privateKey && selectedToken && thresholdAmount) {
+        // Calculate divisibility multiplier
+        const amountMultiplier = 10 ** selectedToken.divisibility
+
+        const scriptThreshold = thresholdAmount * amountMultiplier
+        const scriptAmount = Number(amount) * amountMultiplier
+        // const scriptExchangeRate = Number(priceInSats) / amountMultiplier
+
+        // Encode RuneID to LEB128
+        const runeIdParams = selectedToken.id.toString().split(':').map(e => BigInt(e))
+        const runeId = `00${encodeLEB128(runeIdParams[0])}${encodeLEB128(runeIdParams[1])}`
+        
+        // Create the sell order instance
+        const instance = await createInstance(privateKey, runeId, scriptThreshold)
+
+        // Get outputs
+        const response = await fetch(`/api/outputs/${address}`)
+        const data = await response.json()
+        const feeOutput = data.find((out: any) => Object.keys(out.runes).length === 0 && out.value > 5000 && out.value < 100_000)
+        const runesOutput = data.find((out: any) => !!out.runes[selectedToken.name])
+
+        // Create sell order
+        const sellOrder = await createSellOrderTx(feeOutput, runesOutput, privateKey, runeId, BigInt(scriptAmount), BigInt(priceInSats), instance)
+
+        console.log(instance, sellOrder, sellOrder.uncheckedSerialize())
+
+        const sendListing = await fetch('/api/listing/new', {
+          method: "POST",
+          headers: { "Content-type": "application/json"},
+          body: JSON.stringify({
+            id: sellOrder.hash,
+            rawTx: sellOrder.uncheckedSerialize(),
+            prevOut: null,
+            runeId: selectedToken.id,
+            sellerPubKey: instance.sellerPubKey,
+            divisibility: selectedToken.divisibility,
+            exchangeRate: priceInSats,
+            tokenAmount: scriptAmount,
+            minTokenThreshold: scriptThreshold
+          })
+        })
+        onOpenChange(false)
+      }
     }
   }
 
@@ -87,13 +146,15 @@ export function ListTokenModal({ open, onOpenChange }: ListTokenModalProps) {
             } hover:bg-[#2e343c] transition-colors`}
           >
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-white/10" />
+              <div className="w-10 h-10 rounded-full bg-white/10">
+                <img src={token.imageUrl}></img>
+              </div>
               <div className="text-left">
                 <div>{token.name}</div>
-                <div className="text-[#a7afc0]">{token.symbol}</div>
+                <div className="text-[#a7afc0]">{token.id}</div>
               </div>
             </div>
-            <div className={`${ibmPlexMono.className}`}>{token.amount}</div>
+            <div className={`${ibmPlexMono.className}`}>{token.amount} {token.symbol}</div>
           </button>
         ))}
       </div>
@@ -125,7 +186,7 @@ export function ListTokenModal({ open, onOpenChange }: ListTokenModalProps) {
                 </span>
               </div>
               <button 
-                onClick={() => setAmount(selectedToken?.amount.replace(/,/g, '') || '0')}
+                onClick={() => setAmount(selectedToken?.amount?.replace(/,/g, '') || '0')}
                 className="text-[#ff7531] hover:text-[#ff7531]/90"
               >
                 MAX
@@ -199,7 +260,7 @@ export function ListTokenModal({ open, onOpenChange }: ListTokenModalProps) {
           <span>Token amount</span>
           <div className="text-right">
             <span className={`${ibmPlexMono.className}`}>{parseInt(amount).toLocaleString()} sats</span>
-            <span className={`${ibmPlexMono.className} block text-[#a7afc0]`}>$196</span>
+            <span className={`${ibmPlexMono.className} block text-[#a7afc0]`}>$?</span>
           </div>
         </div>
 
@@ -207,7 +268,7 @@ export function ListTokenModal({ open, onOpenChange }: ListTokenModalProps) {
           <span>Price per token</span>
           <div className="text-right">
             <span className={`${ibmPlexMono.className}`}>{priceInSats} sats</span>
-            <span className={`${ibmPlexMono.className} block text-[#a7afc0]`}>$0.007</span>
+            <span className={`${ibmPlexMono.className} block text-[#a7afc0]`}>$?</span>
           </div>
         </div>
 
@@ -273,7 +334,7 @@ export function ListTokenModal({ open, onOpenChange }: ListTokenModalProps) {
             <Button 
               className="bg-[#ff7531] hover:bg-[#ff7531]/90 text-white rounded-full px-8"
               disabled={step === 1 && !selectedToken}
-              onClick={step === 3 ? () => onOpenChange(false) : handleNext}
+              onClick={handleNext}
             >
               {step === 3 ? 'List Token' : 'Next'}
             </Button>

@@ -10,18 +10,15 @@ import {
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Listing } from '@/lib/utils'
 
 const ibmPlexMono = IBM_Plex_Mono({ subsets: ['latin'], weight: ['400'] })
 
 interface EditListingModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  listing: {
-    amount: string
-    priceInSats: string
-    name: string
-  }
-  onSave: (price: string) => void
+  listing: Listing
+  onSave: (price: number) => void
   onCancel: () => void
   onCancelListing: () => void
 }
@@ -34,11 +31,7 @@ export function EditListingModal({
   onCancel,
   onCancelListing
 }: EditListingModalProps) {
-  const amount = parseInt(listing.amount.replace(/,/g, ''))
-  const price = parseInt(listing.priceInSats.replace(/\D/g, ''))
-  const threshold = 10 // 10% threshold
-  const thresholdAmount = Math.floor((amount * threshold) / 100)
-  const totalValueUSD = (amount * price * 0.0001).toFixed(0) // Simplified USD calculation
+  const totalValueUSD = (listing.tokenAmount * listing.exchangeRate * 0.0001).toFixed(0) // Simplified USD calculation
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -52,7 +45,7 @@ export function EditListingModal({
             <div className="flex justify-between">
               <div className="text-[#a7afc0]">Token amount</div>
               <div>
-                <span className={`${ibmPlexMono.className}`}>{amount.toLocaleString()} sats </span>
+                <span className={`${ibmPlexMono.className}`}>{listing.tokenAmount.toLocaleString()} sats </span>
                 <span className={`${ibmPlexMono.className} text-[#a7afc0]`}>${totalValueUSD}</span>
               </div>
             </div>
@@ -60,7 +53,7 @@ export function EditListingModal({
             <div className="flex justify-between">
               <div className="text-[#a7afc0]">Minimum order threshold</div>
               <div className={ibmPlexMono.className}>
-                {threshold}% = {thresholdAmount.toLocaleString()} {listing.name}
+                {listing.minTokenThreshold.toLocaleString()} {listing.runeName}
               </div>
             </div>
           </div>
@@ -73,7 +66,7 @@ export function EditListingModal({
             <div className="relative">
               <Input
                 type="text"
-                defaultValue={price}
+                defaultValue={listing.exchangeRate}
                 className={`${ibmPlexMono.className} h-16 text-3xl bg-[#16181b] border-0 pr-16 focus-visible:ring-1 focus-visible:ring-[#ff7531]`}
               />
               <div className={`${ibmPlexMono.className} absolute right-4 top-1/2 -translate-y-1/2 text-[#a7afc0]`}>
@@ -101,7 +94,7 @@ export function EditListingModal({
               Cancel
             </Button>
             <Button 
-              onClick={() => onSave(price.toString())}
+              onClick={() => onSave(listing.exchangeRate)}
               className="bg-[#ff7531] hover:bg-[#ff7531]/90 text-white rounded-full px-8"
             >
               Save Changes

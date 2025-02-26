@@ -1,6 +1,5 @@
 "use client"
 
-import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { ChevronDown, Bitcoin, Wallet, Plus, LogOut } from 'lucide-react'
 import {
@@ -12,18 +11,29 @@ import {
 import { Button } from "@/components/ui/button"
 import { IBM_Plex_Mono } from 'next/font/google'
 import { ListTokenModal } from './list-token-modal'
+import { useState } from 'react'
+import { useWalletStore } from '@/store/useWalletStore'
 
 const ibmPlexMono = IBM_Plex_Mono({ subsets: ['latin'], weight: ['400'] })
 
 interface WalletDropdownProps {
-  address: string
   onDisconnect: () => void
 }
 
-export function WalletDropdown({ address, onDisconnect }: WalletDropdownProps) {
+export function WalletDropdown({ onDisconnect }: WalletDropdownProps) {
   const router = useRouter()
   const [showListToken, setShowListToken] = useState(false)
-  const shortAddress = `${address.slice(0, 6)}...${address.slice(-4)}`
+  const { address, seedPhrase, balance, clear } = useWalletStore()
+  const shortAddress = address ? `${address.slice(0, 6)}...${address.slice(-4)}` : ''
+
+  const handleDisconnect = () => {
+    clear()
+    onDisconnect()
+  }
+
+  // TODO: get price from coingecko
+  const btcBalance = Number.parseInt(balance) / 100_000_000
+  const balanceUSD = (btcBalance * 100_000).toFixed(2)
 
   return (
     <>
@@ -31,7 +41,7 @@ export function WalletDropdown({ address, onDisconnect }: WalletDropdownProps) {
         <DropdownMenuTrigger asChild>
           <Button 
             variant="outline" 
-            className="rounded-full bg-[#2e343c] border-[#2e343c] text-white hover:bg-[#2e343c]/90"
+            className="rounded-full bg-[#2e343c] border-[#2e343c] text-white hover:bg-[#2e343c]/90 hover:text-white"
           >
             <div className="w-4 h-4 rounded-full bg-gradient-to-r from-blue-400 to-green-400 mr-2" />
             {shortAddress}
@@ -42,9 +52,9 @@ export function WalletDropdown({ address, onDisconnect }: WalletDropdownProps) {
           <div className="flex items-center justify-between mb-4 pb-4 border-b border-[#2e343c]">
             <div className="flex items-center gap-2">
               <Bitcoin className="h-6 w-6 text-[#f7931a]" />
-              <span className={`text-lg text-white ${ibmPlexMono.className}`}>0.005792</span>
+              <span className={`text-lg text-white ${ibmPlexMono.className}`}>{btcBalance}</span>
             </div>
-            <span className="text-muted-foreground text-sm">$600.00</span>
+            <span className="text-muted-foreground text-sm">${balanceUSD}</span>
           </div>
           <DropdownMenuItem 
             className="py-2 text-[#a7afc0] hover:text-white hover:bg-[#2e343c] cursor-pointer"
@@ -62,7 +72,7 @@ export function WalletDropdown({ address, onDisconnect }: WalletDropdownProps) {
           </DropdownMenuItem>
           <DropdownMenuItem 
             className="py-2 text-[#a7afc0] hover:text-white hover:bg-[#2e343c] cursor-pointer"
-            onClick={onDisconnect}
+            onClick={handleDisconnect}
           >
             <LogOut className="mr-2 h-4 w-4" />
             Disconnect

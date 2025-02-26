@@ -2,23 +2,54 @@
 
 import Link from 'next/link'
 import { WalletDropdown } from './wallet-dropdown'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from './ui/button'
 import { Wallet } from 'lucide-react'
 import { WalletModal } from './wallet-modal'
+import { useWalletStore } from "@/store/useWalletStore"
+import { Buffer } from 'buffer'
+
+window.Buffer = window.Buffer || Buffer;
+globalThis.Buffer = globalThis.Buffer || Buffer;
 
 export function TopNav() {
-  const [connectedWallet, setConnectedWallet] = useState<string | null>(null)
-  const [showWalletModal, setShowWalletModal] = useState(false);
+  const [showWalletModal, setShowWalletModal] = useState(false)
+  const { address, setAddress, setBalance, clear } = useWalletStore()
 
-  const handleConnect = () => {
-    // Simulating wallet connection
-    setConnectedWallet('bc1p...yldf')
+  const handleConnect = (connectedAddress: string) => {
+    setAddress(connectedAddress)
   }
 
   const handleDisconnect = () => {
-    setConnectedWallet(null)
+    clear()
   }
+
+  useEffect(() => {
+    let intervalId: NodeJS.Timeout | null = null
+
+    const fetchBalance = async () => {
+      if (address) {
+        try {
+          const response = await fetch(`/api/address/${address}`)
+          const data = await response.json()
+          setBalance(data['sat_balance'])
+        } catch (error) {
+          console.error("Failed to fetch balance:", error)
+        }
+      }
+    }
+
+    if (address) {
+      fetchBalance() // Fetch immediately when address is set
+      intervalId = setInterval(fetchBalance, 10000) // Then fetch every 10 seconds
+    }
+
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId)
+      }
+    }
+  }, [address, setBalance])
 
   return (
     <>
@@ -26,26 +57,15 @@ export function TopNav() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center">
-            <Link href="/" className="text-white text-xl font-semibold">NAME</Link>
-            <nav className="ml-10 flex items-baseline space-x-4">
-              <Link href="/" className="text-[#ff7531] hover:text-[#ff7531]/90 px-3 py-2 rounded-md text-sm font-medium">
-                Marketplace
-              </Link>
-              <Link href="#" className="text-[#a7afc0] hover:text-white px-3 py-2 rounded-md text-sm font-medium">
-                Page Name
-              </Link>
-              <Link href="#" className="text-[#a7afc0] hover:text-white px-3 py-2 rounded-md text-sm font-medium">
-                Page Name
-              </Link>
-            </nav>
+            <Link href="/" className="text-white text-xl font-semibold">LIME MARKET</Link>
           </div>
           <div>
-            {connectedWallet ? (
-              <WalletDropdown address={connectedWallet} onDisconnect={handleDisconnect} />
+            {address ? (
+              <WalletDropdown onDisconnect={handleDisconnect} />
             ) : (
               <Button 
                 variant="outline" 
-                className="rounded-full bg-black border-[#ff7531] text-white hover:bg-black/90"
+                className="rounded-full bg-black border-[#ff7531] text-white hover:bg-[#ff7531]/90 hover:text-white"
                 onClick={() => setShowWalletModal(true)}
               >
                 <Wallet className="mr-2 h-4 w-4" />

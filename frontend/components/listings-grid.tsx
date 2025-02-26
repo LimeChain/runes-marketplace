@@ -1,21 +1,10 @@
 "use client"
 
-import { Bitcoin } from 'lucide-react'
 import { Button } from "@/components/ui/button"
 import { IBM_Plex_Mono } from 'next/font/google'
+import { Listing, shortAddress } from '@/lib/utils'
 
 const ibmPlexMono = IBM_Plex_Mono({ subsets: ['latin'], weight: ['400'] })
-
-interface Listing {
-  id: number
-  name: string
-  amount: string
-  priceInSats: string
-  priceInUSD: string
-  address: string
-  btcAmount: string
-  usdAmount: string
-}
 
 interface ListingsGridProps {
   listings: Listing[]
@@ -37,31 +26,20 @@ export function ListingsGrid({
           key={listing.id}
           className="p-4 rounded-lg bg-[#16181b] border border-[#2e343c] flex flex-col"
         >
-          <div className="text-[#a7afc0] text-sm mb-2">{listing.name}</div>
+          <div className="text-[#a7afc0] text-sm mb-2">{listing.runeName}</div>
           <div className={`${ibmPlexMono.className} text-4xl font-medium mb-4`}>
-            {listing.amount}
+            {listing.tokenAmount / (10 ** listing.divisibility)}
           </div>
           <div className="space-y-1 mb-4">
             <div className={`${ibmPlexMono.className} text-lg`}>
-              {listing.priceInSats}
+              {listing.exchangeRate} sats / {listing.runeSymbol}
             </div>
             <div className={`${ibmPlexMono.className} text-[#a7afc0]`}>
-              {listing.priceInUSD}
+              ${listing.exchangeRate / 1000}
             </div>
           </div>
           <div className={`${ibmPlexMono.className} text-[#a7afc0] text-sm border-t border-b border-[#2e343c] my-4 py-4`}>
-            {listing.address}
-          </div>
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <Bitcoin className="h-5 w-5 text-[#f7931a]" />
-              <span className={ibmPlexMono.className}>
-                {listing.btcAmount}
-              </span>
-            </div>
-            <span className={`${ibmPlexMono.className} text-[#a7afc0]`}>
-              {listing.usdAmount}
-            </span>
+            {shortAddress(listing.sellerAddress)}
           </div>
           {context === 'token' ? (
             <Button 

@@ -1,57 +1,40 @@
-"use client"
+"use client";
 
-import { useRouter } from "next/navigation"
-import Image from "next/image"
-import { VerifiedIcon } from 'lucide-react'
-
-interface TokenData {
-  id: number
-  name: string
-  verified: boolean
-  price: string
-  priceUSD: string
-  priceChange: string
-  volume: string
-  volumeUSD: string
-  marketCap: string
-  marketCapBTC: string
-  trades: number
-}
-
-const tokens: TokenData[] = [
-  {
-    id: 1,
-    name: "Token Name",
-    verified: true,
-    price: "7 sats",
-    priceUSD: "$0.007",
-    priceChange: "0.7%",
-    volume: "6.468 BTC",
-    volumeUSD: "$604.99K",
-    marketCap: "$730.06M",
-    marketCapBTC: "7,358.161 BTC",
-    trades: 535,
-  },
-  {
-    id: 2,
-    name: "Token Name",
-    verified: true,
-    price: "12 sats",
-    priceUSD: "$0.012",
-    priceChange: "1.2%",
-    volume: "8.245 BTC",
-    volumeUSD: "$824.99K",
-    marketCap: "$950.06M",
-    marketCapBTC: "9,358.161 BTC",
-    trades: 721,
-  },
-]
+import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { VerifiedIcon } from "lucide-react";
+import { Token } from "@/lib/utils";
 
 export function MarketTable() {
-  const router = useRouter()
+  const router = useRouter();
+  const [tokens, setTokens] = useState<Token[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const handleRowClick = (tokenId: number) => {
-    router.push(`/token/${tokenId}`)
+  const handleRowClick = (tokenId: string) => {
+    router.push(`/token/${tokenId}`);
+  };
+
+  useEffect(() => {
+    const fetchTokens = async () => {
+      try {
+        const response = await fetch(`/api/tokens`);
+        if (!response.ok) {
+          throw new Error("Failed to fetch tokens");
+        }
+        const data = await response.json();
+
+        setTokens(data);
+        setIsLoading(false);
+      } catch (err) {
+        console.error(err);
+        setIsLoading(false);
+      }
+    };
+    fetchTokens();
+  }, []);
+
+  if (isLoading) {
+    return <div className="text-white text-center py-8">Loading...</div>;
   }
 
   return (
@@ -69,26 +52,32 @@ export function MarketTable() {
           </tr>
         </thead>
         <tbody>
-          {tokens.map((token) => (
-            <tr 
-              key={token.id} 
+          {tokens.map((token, index) => (
+            <tr
+              key={token.id}
               className="border-t border-[#2e343c] hover:bg-[#2e343c] transition-colors duration-200 cursor-pointer"
               onClick={() => handleRowClick(token.id)}
             >
-              <td className="py-4 pl-4">{token.id}</td>
+              <td className="py-4 pl-4">{index+1}</td>
               <td className="py-4">
                 <div className="flex items-center gap-2">
-                  <div className="h-8 w-8 rounded-full bg-[#2e343c]" />
-                  <span className="font-medium">{token.name}</span>
-                  {token.verified && (
-                    <VerifiedIcon className="h-4 w-4 text-[#ff7531]" />
-                  )}
+                  <div className="h-8 w-8 rounded-full bg-[#2e343c]">
+                    <img src={token.imageUrl}></img>
+                  </div>
+                  <div className="space-y-1">
+                    <div>
+                      <span className="font-medium">{token.name} {token.verified && (<VerifiedIcon className="h-4 w-4 text-[#ff7531] inline" />)}</span>
+                    </div>
+                    <div className="text-[#a7afc0]">{token.id}</div>
+                  </div>
                 </div>
               </td>
               <td className="py-4">
                 <div className="space-y-1">
-                  <div>{token.price}</div>
-                  <div className="text-[#a7afc0]">{token.priceUSD}</div>
+                  <div>{token.price} sats</div>
+                  <div className="text-[#a7afc0]">
+                    ${parseInt(token.price) / 1000}
+                  </div>
                 </div>
               </td>
               <td className="py-4">
@@ -112,6 +101,5 @@ export function MarketTable() {
         </tbody>
       </table>
     </div>
-  )
+  );
 }
-

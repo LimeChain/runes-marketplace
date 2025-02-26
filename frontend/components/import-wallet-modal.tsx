@@ -10,6 +10,9 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
+import { useWalletStore } from "@/store/useWalletStore"
+import * as bip39 from '@scure/bip39'
+import { wordlist } from '@scure/bip39/wordlists/english'
 
 interface ImportWalletModalProps {
   open: boolean
@@ -20,11 +23,41 @@ interface ImportWalletModalProps {
 
 export function ImportWalletModal({ open, onOpenChange, onCancel, onImport }: ImportWalletModalProps) {
   const [seedPhrase, setSeedPhrase] = useState<string[]>(Array(12).fill(""))
+  const { setSeedPhrase: storeSeedPhrase, setPrivateKey, setAddress } = useWalletStore()
 
-  const handleImport = () => {
-    // Simulate wallet import with a hardcoded address
-    onImport("bc1p7x8v2z4yldf")
-    onOpenChange(false) // Close the modal after successful import
+  const buttonDisabled = seedPhrase.includes("")
+
+  const handleImport = async () => {
+    const mnemonicString = seedPhrase.join(' ')
+    const btc = await import('bitcore-lib-inquisition')
+
+    if (bip39.validateMnemonic(mnemonicString, wordlist)) {
+      const seed = bip39.mnemonicToSeedSync(mnemonicString)
+      const seedBuffer = Buffer.from(seed)
+      const xpriv = btc.HDPrivateKey.fromSeed(seedBuffer)
+
+      let pk
+
+      // TODO: hack to only use private keys with even public key
+      for (let i = 0; i < 100; i++) {
+        pk = xpriv.deriveChild(`m/86'/0'/0'/0/${i}`)
+        if (pk.privateKey.toPublicKey().toString().startsWith('02')) {
+          console.log(i)
+          break
+        }
+      }
+      
+      const address = pk.privateKey.toAddress(btc.Networks.regtest, btc.Address.PayToWitnessPublicKeyHash).toString()
+  
+      storeSeedPhrase(seedPhrase)
+      setPrivateKey(pk.privateKey.toWIF())
+  
+      setAddress(address)
+      onImport(address)
+      onOpenChange(false)
+    } else {
+      console.log("invalid")
+    }
   }
 
   return (
@@ -33,7 +66,7 @@ export function ImportWalletModal({ open, onOpenChange, onCancel, onImport }: Im
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold">Import Wallet</DialogTitle>
           <DialogDescription className="text-center text-muted-foreground">
-            To import a wallet enter bellow the 12-word seed phrase.
+            To import a wallet enter below the 12-word seed phrase.
           </DialogDescription>
         </DialogHeader>
         <div className="grid grid-cols-3 gap-2 p-4">
@@ -43,9 +76,18 @@ export function ImportWalletModal({ open, onOpenChange, onCancel, onImport }: Im
               <Input
                 value={seedPhrase[i]}
                 onChange={(e) => {
-                  const newPhrase = [...seedPhrase]
-                  newPhrase[i] = e.target.value
-                  setSeedPhrase(newPhrase)
+                  const splitSeed = e.target.value.split(' ')
+                  const newPhrase = []
+                  if (i == 0 && splitSeed.length === 12) {
+                    for (let j = 0; j < 12; j++) {
+                      newPhrase[j] = splitSeed[j]
+                    }
+                    setSeedPhrase(newPhrase)
+                  } else {
+                    const newPhrase = [...seedPhrase]
+                    newPhrase[i] = e.target.value
+                    setSeedPhrase(newPhrase)
+                  }
                 }}
                 className="bg-[#2e343c] border-0 text-white focus-visible:ring-1 focus-visible:ring-[#ff7531]"
                 placeholder="Word"
@@ -57,6 +99,7 @@ export function ImportWalletModal({ open, onOpenChange, onCancel, onImport }: Im
           <Button 
             onClick={handleImport}
             className="w-full bg-[#ff7531] hover:bg-[#ff7531]/90 text-white"
+            disabled={buttonDisabled}
           >
             Import
           </Button>

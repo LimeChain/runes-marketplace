@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { VerifiedIcon } from 'lucide-react'
 import { IBM_Plex_Mono } from 'next/font/google'
 import {
@@ -12,89 +12,53 @@ import {
 } from "@/components/ui/select"
 import { ListingsGrid } from '@/components/listings-grid'
 import { EditListingModal } from './edit-listing-modal'
+import { useWalletStore } from "@/store/useWalletStore"
+import { Listing, Token } from "@/lib/utils"
 
 const ibmPlexMono = IBM_Plex_Mono({ subsets: ['latin'], weight: ['400'] })
 
-const tokens = [
-  {
-    id: 1,
-    name: "Token Name",
-    verified: true,
-    myAmount: "100,000",
-    price: "7 sats",
-    priceUSD: "$0.007",
-    priceChange: "0.7%",
-    volume: "6.468 BTC",
-    volumeUSD: "$604.99K",
-    marketCap: "$730.06M",
-    marketCapBTC: "7,358.161 BTC",
-    trades: 535,
-  },
-  // Duplicate the token 3 more times for the example
-  {
-    id: 2,
-    name: "Token Name",
-    verified: true,
-    myAmount: "100,000",
-    price: "7 sats",
-    priceUSD: "$0.007",
-    priceChange: "0.7%",
-    volume: "6.468 BTC",
-    volumeUSD: "$604.99K",
-    marketCap: "$730.06M",
-    marketCapBTC: "7,358.161 BTC",
-    trades: 535,
-  },
-  {
-    id: 3,
-    name: "Token Name",
-    verified: true,
-    myAmount: "100,000",
-    price: "7 sats",
-    priceUSD: "$0.007",
-    priceChange: "0.7%",
-    volume: "6.468 BTC",
-    volumeUSD: "$604.99K",
-    marketCap: "$730.06M",
-    marketCapBTC: "7,358.161 BTC",
-    trades: 535,
-  },
-  {
-    id: 4,
-    name: "Token Name",
-    verified: true,
-    myAmount: "100,000",
-    price: "7 sats",
-    priceUSD: "$0.007",
-    priceChange: "0.7%",
-    volume: "6.468 BTC",
-    volumeUSD: "$604.99K",
-    marketCap: "$730.06M",
-    marketCapBTC: "7,358.161 BTC",
-    trades: 535,
-  },
-]
-
-const listings = Array.from({ length: 10 }, (_, i) => ({
-  id: i + 1,
-  name: "Name",
-  amount: "80,000",
-  priceInSats: "7 sats",
-  priceInUSD: "$0.007",
-  address: "bc1p...yldf",
-  btcAmount: "0.005792",
-  usdAmount: "$600.00"
-}))
-
 export function AssetsTable() {
   const [activeTab, setActiveTab] = useState<'assets' | 'listings'>('assets')
-  const [editingListing, setEditingListing] = useState<typeof listings[0] | null>(null)
+  const [editingListing, setEditingListing] = useState<Listing | null>(null)
+  const [tokens, setTokens] = useState<Token[]>([])
+  const [listings, setListings] = useState<Listing[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const { address } = useWalletStore()
+
+  useEffect(() => {
+    const fetchTokens = async () => {
+      try {
+        const response = await fetch(`/api/address/${address}/tokens`)
+        if (!response.ok) {
+          throw new Error("Failed to fetch tokens")
+        }
+        const data = await response.json()
+
+        setTokens(data)
+        setIsLoading(false)
+      } catch (err) {
+        setError("Failed to load tokens. Please try again later.")
+        setIsLoading(false)
+      }
+    }
+
+    const fetchListings = async () => {
+      const response = await fetch(`/api/listings/`)
+      const data: Listing[] = await response.json()
+      setListings(data.filter(listing => listing.sellerAddress === address))
+    }
+    if (address) {
+      fetchTokens()
+      fetchListings()
+    }
+  }, [])
 
   const handleEditListing = (listing: any) => {
     setEditingListing(listing)
   }
 
-  const handleSaveEdit = (price: string) => {
+  const handleSaveEdit = (price: number) => {
     // Handle saving the edited listing
     console.log('Saving listing with new price:', price)
     setEditingListing(null)
@@ -104,6 +68,14 @@ export function AssetsTable() {
     // Handle canceling the listing
     console.log('Canceling listing:', editingListing)
     setEditingListing(null)
+  }
+
+  if (isLoading) {
+    return <div className="text-white text-center py-8">Loading...</div>
+  }
+
+  if (error) {
+    return <div className="text-red-500 text-center py-8">{error}</div>
   }
 
   return (
@@ -159,23 +131,27 @@ export function AssetsTable() {
                 </tr>
               </thead>
               <tbody>
-                {tokens.map((token) => (
+                {tokens.map((token, index) => (
                   <tr 
                     key={token.id} 
                     className="border-t border-[#2e343c] hover:bg-[#2e343c] transition-colors duration-200"
                   >
-                    <td className="py-4 pl-4">{token.id}</td>
+                    <td className="py-4 pl-4">{index+1}</td>
                     <td className="py-4">
                       <div className="flex items-center gap-2">
-                        <div className="h-8 w-8 rounded-full bg-gradient-to-b from-yellow-300 via-blue-400 to-blue-500" />
-                        <span className="font-medium">{token.name}</span>
-                        {token.verified && (
-                          <VerifiedIcon className="h-4 w-4 text-[#ff7531]" />
-                        )}
+                        <div className="h-8 w-8 rounded-full bg-gradient-to-b from-yellow-300 via-blue-400 to-blue-500">
+                          <img src={token.imageUrl} ></img>
+                        </div>
+                        <div className="space-y-1">
+                          <div>
+                            <span className="font-medium">{token.name} {token.verified && (<VerifiedIcon className="h-4 w-4 text-[#ff7531] inline" />)}</span>
+                          </div>
+                          <div className="text-[#a7afc0]">{token.id}</div>
+                        </div>
                       </div>
                     </td>
                     <td className="py-4">
-                      <div className={ibmPlexMono.className}>{token.myAmount}</div>
+                      <div className={ibmPlexMono.className}>{token.amount}</div>
                     </td>
                     <td className="py-4">
                       <div className="space-y-1">

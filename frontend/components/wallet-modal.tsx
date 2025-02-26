@@ -10,6 +10,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog"
 import { ImportWalletModal } from "./import-wallet-modal"
+import { useWalletStore } from '@/store/useWalletStore'
 
 interface WalletModalProps {
   open: boolean
@@ -19,10 +20,16 @@ interface WalletModalProps {
 
 export function WalletModal({ open, onOpenChange, onConnect }: WalletModalProps) {
   const [showImport, setShowImport] = useState(false)
+  const { address, setAddress } = useWalletStore()
 
   const handleImportClick = () => {
     setShowImport(true)
     onOpenChange(false)
+  }
+
+  const handleConnect = (importedAddress: string) => {
+    setAddress(importedAddress)
+    onConnect(importedAddress)
   }
 
   return (
@@ -60,7 +67,7 @@ export function WalletModal({ open, onOpenChange, onConnect }: WalletModalProps)
           setShowImport(false)
           onOpenChange(true)
         }}
-        onImport={onConnect}
+        onImport={handleConnect}
       />
     </>
   )
