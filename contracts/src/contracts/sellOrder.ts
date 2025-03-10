@@ -104,15 +104,7 @@ export class SellOrder extends SmartContract {
 
         // TODO: current max is u15 (32K). Think about fixes?
         const btcAmount = OpMul.u15Mul(purchasedAmount, stateExchangeRate)
-        const btcAmountByteString = int2ByteString(btcAmount)
-        const btcAmountLength = len(btcAmountByteString)
-
-        let encodedAmount: ByteString = toByteString('')
-
-        // TODO: finish and move to function?
-        if (btcAmountLength == 2n) {
-            encodedAmount = btcAmountByteString + toByteString('000000000000')
-        }
+        const encodedAmount = SellOrder.encodeBtcAmount(btcAmount)
 
         // Enforce outputs
         const hashOutputs = sha256(
@@ -166,18 +158,7 @@ export class SellOrder extends SmartContract {
 
         // TODO: current max is u15 (32K). Think about fixes?
         const btcAmount = OpMul.u15Mul(stateAmount, stateExchangeRate)
-        const btcAmountByteString = int2ByteString(btcAmount)
-        const btcAmountLength = len(btcAmountByteString)
-
-        let encodedAmount: ByteString = toByteString('')
-
-        // TODO: finish and move to function?
-        // Pad the amount to 8 bytes
-        if (btcAmountLength == 2n) {
-            encodedAmount = btcAmountByteString + toByteString('000000000000')
-        } else if (btcAmountLength == 3n) {
-            encodedAmount = btcAmountByteString + toByteString('0000000000')
-        }
+        const encodedAmount = SellOrder.encodeBtcAmount(btcAmount)
 
         // Enforce outputs
         const hashOutputs = sha256(
@@ -312,5 +293,34 @@ export class SellOrder extends SmartContract {
             int2ByteString(len(opreturnScript)) +
             opreturnScript
         )
+    }
+
+    @method()
+    static encodeBtcAmount(amount: bigint): ByteString {
+        const btcAmountByteString = int2ByteString(amount)
+        const btcAmountLength = len(btcAmountByteString)
+        let encodedAmount: ByteString = toByteString('')
+
+        if (btcAmountLength == 1n) {
+            encodedAmount = btcAmountByteString + toByteString('00000000000000')
+        } else if (btcAmountLength == 2n) {
+            encodedAmount = btcAmountByteString + toByteString('000000000000')
+        } else if (btcAmountLength == 3n) {
+            encodedAmount = btcAmountByteString + toByteString('0000000000')
+        } else if (btcAmountLength == 4n) {
+            encodedAmount = btcAmountByteString + toByteString('00000000')
+        } else if (btcAmountLength == 5n) {
+            encodedAmount = btcAmountByteString + toByteString('000000')
+        } else if (btcAmountLength == 6n) {
+            encodedAmount = btcAmountByteString + toByteString('0000')
+        } else if (btcAmountLength == 7n) {
+            encodedAmount = btcAmountByteString + toByteString('00')
+        } else if (btcAmountLength == 8n) {
+            encodedAmount = btcAmountByteString
+        } else {
+            assert(false)
+        }
+
+        return encodedAmount
     }
 }

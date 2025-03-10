@@ -68,14 +68,10 @@ export interface Token {
   symbol: string
   divisibility: number
   verified: boolean
-  amount: string | null
-  price: string
-  priceUSD: string
-  priceChange: string
-  volume: string
-  volumeUSD: string
-  marketCap: string
-  marketCapBTC: string
+  amount: number | null
+  price: number
+  volume: number
+  marketCap: number
   trades: number
 }
 

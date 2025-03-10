@@ -32,10 +32,10 @@ export function ListingsGrid({
           </div>
           <div className="space-y-1 mb-4">
             <div className={`${ibmPlexMono.className} text-lg`}>
-              {listing.exchangeRate} sats / {listing.runeSymbol}
+              {listing.exchangeRate * (10 ** listing.divisibility)} sats / {listing.runeSymbol}
             </div>
             <div className={`${ibmPlexMono.className} text-[#a7afc0]`}>
-              ${listing.exchangeRate / 1000}
+              ${listing.exchangeRate * (10 ** listing.divisibility) / 1000}
             </div>
           </div>
           <div className={`${ibmPlexMono.className} text-[#a7afc0] text-sm border-t border-b border-[#2e343c] my-4 py-4`}>

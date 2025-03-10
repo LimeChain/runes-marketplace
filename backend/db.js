@@ -1,18 +1,19 @@
 // @ts-check
-import { DatabaseSync, StatementSync } from 'node:sqlite'
-import "./types.js"
+import { DatabaseSync, StatementSync } from "node:sqlite";
+import "./types.js";
 
-const database = new DatabaseSync('marketplace.db')
+const database = new DatabaseSync("marketplace.db");
 
-let 
-  /** @type {StatementSync} */ getListingsQuery,
+let /** @type {StatementSync} */ getListingsQuery,
   /** @type {StatementSync} */ createListingQuery,
   /** @type {StatementSync} */ closeListingQuery,
-  /** @type {StatementSync} */ getTokensQuery,
-  /** @type {StatementSync} */ getListingsForTokenQuery
+  /** @type {StatementSync} */ getTokenIdsQuery,
+  /** @type {StatementSync} */ getListingsForTokenQuery,
+  /** @type {StatementSync} */ getOpenListingsForTokenQuery;
 
 export function initDb() {
   // database.exec(`DROP TABLE IF EXISTS listing`)
+  // TODO: we can remove the status and use the closeTimestamp
   database.exec(`
     CREATE TABLE IF NOT EXISTS listing(
       id TEXT PRIMARY KEY,
@@ -25,42 +26,47 @@ export function initDb() {
       exchangeRate INTEGER,
       tokenAmount INTEGER,
       minTokenThreshold INTEGER,
-      status TEXT CHECK( status IN ('not_broadcasted', 'open', 'closed') )
+      openTimestamp INTEGER DEFAULT (unixepoch()),
+      closeTimestamp INTEGER DEFAULT NULL
     );
     CREATE INDEX IF NOT EXISTS idx_listing_rune_id ON listing(runeId);
-  `)
-  getListingsQuery = database.prepare('SELECT * from listing')
+  `);
+  getListingsQuery = database.prepare("SELECT * from listing");
   createListingQuery = database.prepare(`INSERT INTO listing (
-    id, rawTx, prevOut, runeId, sellerPubKey, sellerAddress, divisibility, exchangeRate, tokenAmount, minTokenThreshold, status
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
-  closeListingQuery = database.prepare(`UPDATE listing SET status='closed' WHERE id = ?`)
-  getTokensQuery = database.prepare(`SELECT runeId as id, min(exchangeRate) as price from listing WHERE status is not 'closed' GROUP BY runeId`)
-  getListingsForTokenQuery = database.prepare(`SELECT * FROM listing WHERE runeId = ? AND status is not 'closed'`)
+    id, rawTx, prevOut, runeId, sellerPubKey, sellerAddress, divisibility, exchangeRate, tokenAmount, minTokenThreshold
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  );
+  closeListingQuery = database.prepare(
+    `UPDATE listing SET closeTimestamp = unixepoch() WHERE id = ?`
+  );
+  getTokenIdsQuery = database.prepare(
+    `SELECT runeId from listing GROUP BY runeId`
+  );
+  getListingsForTokenQuery = database.prepare(
+    `SELECT * FROM listing WHERE runeId = ? ORDER BY exchangeRate ASC`
+  );
+  getOpenListingsForTokenQuery = database.prepare(
+    `SELECT * FROM listing WHERE runeId = ? AND closeTimestamp is NULL ORDER BY exchangeRate ASC`
+  );
 }
 
 /**
- * 
+ *
  * @returns {Listing[]}
  */
 export function getListings() {
-  return /** @type {Listing[]} */ (getListingsQuery.all())
+  return /** @type {Listing[]} */ (getListingsQuery.all());
 }
 
 // TODO: runeID in another table?
 /**
  * Creates a new listing
- * 
+ *
  * @param {Listing} listing
- * @param {ListingStatus} status 
- * 
+ *
  * @returns {boolean} if the insert was successful
  */
-export function createListing(listing, status) {
-  // Check that address is computed
-  if (!listing.sellerAddress) {
-    return false
-  }
-
+export function createListing(listing) {
   const result = createListingQuery.run(
     listing.id,
     listing.rawTx,
@@ -72,34 +78,38 @@ export function createListing(listing, status) {
     listing.exchangeRate,
     listing.tokenAmount,
     listing.minTokenThreshold,
-    status)
-  return result.changes === 1
+  );
+  return result.changes === 1;
 }
 
 /**
  * Closes the listing
- * 
- * @param {string} id 
+ *
+ * @param {string} id
  * @returns {boolean} if the insert was successful
  */
 export function closeListing(id) {
-  const result = closeListingQuery.run(id)
-  return result.changes === 1
+  const result = closeListingQuery.run(id);
+  return result.changes === 1;
 }
 
 /**
- * 
- * @returns {Token[]}
+ *
+ * @returns {{runeId: string}[]}
  */
 export function getTokens() {
-  return /** @type {Token[]} */ (getTokensQuery.all())
+  return /** @type {{runeId: string}[]} */ (getTokenIdsQuery.all());
 }
 
 /**
- * 
- * @param {string} id 
+ *
+ * @param {string} id runeId
+ * @param {boolean=} onlyOpen return only the open listings
  * @returns {Listing[]}
  */
-export function getListingsForToken(id) {
-  return /** @type {Listing[]} */ (getListingsForTokenQuery.all(id))
+export function getListingsForToken(id, onlyOpen) {
+  const query = onlyOpen
+    ? getOpenListingsForTokenQuery
+    : getListingsForTokenQuery;
+  return /** @type {Listing[]} */ (query.all(id));
 }

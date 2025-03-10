@@ -20,6 +20,8 @@ npx scrypt-cli@latest compile -i "src/contracts/sellOrder.ts" --asm
 NETWORK=regtest npx mocha --no-config --require ts-node/register tests/sellOrder.test.ts
 ```
 
+Contract files should be automatically linked in the frontend. If they aren't for whatever reason, copy `sellOrder.ts`, `sigHashUtils.ts` and `opmul.ts` from `contracts/src/contracts` and `sellOrder.json` from `contracts/artifacts` to `frontend/contracts`
+
 ## Run the backend
 
 ```bash

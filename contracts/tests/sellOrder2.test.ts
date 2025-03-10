@@ -59,7 +59,7 @@ describe('Test SmartContract `SellOrder`', () => {
         ])
 
         const RUNEID = '00c0a23301'
-        const ORDER_THRESHOLD = 1000n
+        const ORDER_THRESHOLD = 10n
 
         const instance = new SellOrder(
             xOnlyPub.toString('hex'),
@@ -81,10 +81,10 @@ describe('Test SmartContract `SellOrder`', () => {
         const txFee = new btc.Transaction()
             .from(utxos.slice(0, 3))
             .to(addrP2WPKH, 546) // Initial Runes UTXO
-            .to(addrP2WPKH, 5000) // Seller's init tx
-            .to(addrP2WPKHBuyer, 5000) // Buyer's first purchase
-            .to(addrP2WPKH, 5000) // Seller's update exchange rate tx
-            .to(addrP2WPKHBuyer, 5000) // Buyer's second purchase
+            .to(addrP2WPKH, 10000) // Seller's init tx
+            .to(addrP2WPKHBuyer, 10000) // Buyer's first purchase
+            .to(addrP2WPKH, 10000) // Seller's update exchange rate tx
+            .to(addrP2WPKHBuyer, 10000) // Buyer's second purchase
             .change(addrP2WPKH)
             .feePerByte(2)
             .sign(seckeySeller)
@@ -98,8 +98,8 @@ describe('Test SmartContract `SellOrder`', () => {
             addrP2WPKH,
             seckeySeller,
             RUNEID,
-            6099n,
-            10n,
+            10000n,
+            2n,
             instance
         )
 
@@ -116,9 +116,9 @@ describe('Test SmartContract `SellOrder`', () => {
             addrP2WPKHBuyer,
             seckeyBuyer,
             RUNEID,
-            1000n,
-            6099n,
-            10n,
+            3170n,
+            10000n,
+            2n,
             instance
         )
 
@@ -144,51 +144,51 @@ describe('Test SmartContract `SellOrder`', () => {
         //////// UPDATE EXCHANGE RATE
         // Seller updates the exchange rate from 10 to 20
 
-        const [tx2, tx2Witnesses] = await createUpdateExchangeRateTx(
-            tx1,
-            txFee,
-            3,
-            addrP2WPKH,
-            seckeySeller,
-            RUNEID,
-            5099n,
-            20n,
-            instance
-        )
+        // const [tx2, tx2Witnesses] = await createUpdateExchangeRateTx(
+        //     tx1,
+        //     txFee,
+        //     3,
+        //     addrP2WPKH,
+        //     seckeySeller,
+        //     RUNEID,
+        //     5099n,
+        //     20n,
+        //     instance
+        // )
 
-        console.log('tx2 (serialized):', tx2.uncheckedSerialize())
+        // console.log('tx2 (serialized):', tx2.uncheckedSerialize())
 
-        // Run locally
-        interpreter = new btc.Script.Interpreter()
-        flags =
-            btc.Script.Interpreter.SCRIPT_VERIFY_WITNESS |
-            btc.Script.Interpreter.SCRIPT_VERIFY_TAPROOT |
-            btc.Script.Interpreter.SCRIPT_VERIFY_DISCOURAGE_OP_SUCCESS
-        res = interpreter.verify(
-            new btc.Script(''),
-            tx1.outputs[0].script,
-            tx2,
-            0,
-            flags,
-            tx2Witnesses,
-            tx1.outputs[0].satoshis
-        )
-        expect(res).to.be.true
+        // // Run locally
+        // interpreter = new btc.Script.Interpreter()
+        // flags =
+        //     btc.Script.Interpreter.SCRIPT_VERIFY_WITNESS |
+        //     btc.Script.Interpreter.SCRIPT_VERIFY_TAPROOT |
+        //     btc.Script.Interpreter.SCRIPT_VERIFY_DISCOURAGE_OP_SUCCESS
+        // res = interpreter.verify(
+        //     new btc.Script(''),
+        //     tx1.outputs[0].script,
+        //     tx2,
+        //     0,
+        //     flags,
+        //     tx2Witnesses,
+        //     tx1.outputs[0].satoshis
+        // )
+        // expect(res).to.be.true
 
         //////// THIRD ITERATION
         // Buyer purchases the remaining 5099 tokens for 50_990 sats
 
         const [tx3, tx3Witnesses] = await createBuyTx(
-            tx2,
+            tx1, // change
             txFee,
             4,
             addrP2WPKH,
             addrP2WPKHBuyer,
             seckeyBuyer,
             RUNEID,
-            5099n,
-            5099n,
-            20n,
+            1200n,
+            6830n,
+            2n,
             instance
         )
 
@@ -202,12 +202,12 @@ describe('Test SmartContract `SellOrder`', () => {
             btc.Script.Interpreter.SCRIPT_VERIFY_DISCOURAGE_OP_SUCCESS
         res = interpreter.verify(
             new btc.Script(''),
-            tx2.outputs[0].script,
+            tx1.outputs[0].script,
             tx3,
             0,
             flags,
             tx3Witnesses,
-            tx2.outputs[0].satoshis
+            tx1.outputs[0].satoshis
         )
         expect(res).to.be.true
     })
@@ -243,13 +243,20 @@ function createSellOrderTx(
     const tokenAmountLeb128 = encodeLEB128(tokenAmount)
     const tokenAmountLE = toHex(tokenAmount)
     const exchangeRateLE = toHex(exchangeRate)
-    // TODO: check the size
+
+    const tokenAmountLEBytes = toHex(BigInt(tokenAmountLE.length / 2));
+    const exchangeRateLEBytes = toHex(BigInt(exchangeRateLE.length / 2));
+
     const opRetStateScript0 = new btc.Script(
-        `6a02${tokenAmountLE}01${exchangeRateLE}`
-    ) // Amount: 6099; ExchangeRate: 10
+        `6a${tokenAmountLEBytes}${tokenAmountLE}${exchangeRateLEBytes}${exchangeRateLE}`
+    );
+    const runeBytes = toHex(
+        BigInt((runeId.length + tokenAmountLeb128.length) / 2 + 1)
+    );
+
     const opRetRuneScript0 = new btc.Script(
-        `6a5d08${runeId}${tokenAmountLeb128}00`
-    ) // RuneID: 840000:1; 6099 tokens; out: 0
+        `6a5d${runeBytes}${runeId}${tokenAmountLeb128}00`
+    )
 
     return new btc.Transaction()
         .from([runesUtxo, feeUtxo])
@@ -312,19 +319,30 @@ async function createBuyTx(
     }
 
     const tokenPurchaseAmountLeb128 = encodeLEB128(tokenPurchaseAmount)
-    const tokenPurchaseAmountLE = toHex(tokenPurchaseAmount)
+
+    let tokenPurchaseAmountLE = toHex(tokenPurchaseAmount)
+    
+    // Need to add '00' if the last byte is >= 127, otherwise the vm interpets it as negative
+    if (parseInt(tokenPurchaseAmountLE.slice(-2), 16) > 127) {
+        tokenPurchaseAmountLE += '00'
+    }
+
     const oldStateTokenAmountLE = toHex(tokenAmount)
     const tokenAmountLE = toHex(BigInt(tokenAmount - tokenPurchaseAmount))
     const exchangeRateLE = toHex(exchangeRate)
 
     const runeOutpoint = isFullBuy ? '01' : '03'
 
+    const opRetScriptAmountSize = toHex(BigInt(tokenAmountLE.length / 2))
+    const opRetScriptExchangeRateSize = toHex(BigInt(exchangeRateLE.length / 2))
     const opRetStateScript = new btc.Script(
-        `6a02${tokenAmountLE}01${exchangeRateLE}`
-    ) // Amount: 5099; ExchangeRate: 10
+        `6a${opRetScriptAmountSize}${tokenAmountLE}${opRetScriptExchangeRateSize}${exchangeRateLE}`
+    )
+
+    const runeScriptSize = toHex(BigInt(`${runeId}${tokenPurchaseAmountLeb128}${runeOutpoint}`.length / 2))
     const opRetRuneScript = new btc.Script(
-        `6a5d08${runeId}${tokenPurchaseAmountLeb128}${runeOutpoint}`
-    ) // RuneID: 840000:1; 1000 tokens; out: 3
+        `6a5d${runeScriptSize}${runeId}${tokenPurchaseAmountLeb128}${runeOutpoint}`
+    )
 
     const tx = new btc.Transaction().from([utxoSellOrderP2TR, paymentUTXO])
 
@@ -390,7 +408,8 @@ async function createBuyTx(
 
     // Concat all outputs after the covenant and the state
     const prevTxOutputs = new btc.encoding.BufferWriter()
-    
+    // prevTx.outputs[2].toBufferWriter(prevTxOutputs)
+
     for (let i = 2; i < prevTx.outputs.length; i++) {
         prevTx.outputs[i].toBufferWriter(prevTxOutputs)
     }

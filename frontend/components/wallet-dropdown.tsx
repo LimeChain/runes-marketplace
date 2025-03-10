@@ -24,7 +24,7 @@ export function WalletDropdown({ onDisconnect }: WalletDropdownProps) {
   const router = useRouter()
   const [showListToken, setShowListToken] = useState(false)
   const { address, seedPhrase, balance, clear } = useWalletStore()
-  const shortAddress = address ? `${address.slice(0, 6)}...${address.slice(-4)}` : ''
+  const shortAddress = address ? `${address.slice(0, 8)}...${address.slice(-4)}` : ''
 
   const handleDisconnect = () => {
     clear()

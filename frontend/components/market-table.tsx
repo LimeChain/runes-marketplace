@@ -45,7 +45,6 @@ export function MarketTable() {
             <th className="pb-4 pl-4">#</th>
             <th className="pb-4">Name</th>
             <th className="pb-4">Price</th>
-            <th className="pb-4">Price%</th>
             <th className="pb-4">Volume</th>
             <th className="pb-4">Market Cap</th>
             <th className="pb-4">Trades</th>
@@ -66,7 +65,7 @@ export function MarketTable() {
                   </div>
                   <div className="space-y-1">
                     <div>
-                      <span className="font-medium">{token.name} {token.verified && (<VerifiedIcon className="h-4 w-4 text-[#ff7531] inline" />)}</span>
+                      <span className="font-medium">{token.name}</span>
                     </div>
                     <div className="text-[#a7afc0]">{token.id}</div>
                   </div>
@@ -74,25 +73,22 @@ export function MarketTable() {
               </td>
               <td className="py-4">
                 <div className="space-y-1">
-                  <div>{token.price} sats</div>
+                  <div>{token.price  * (10 ** token.divisibility)} sats</div>
                   <div className="text-[#a7afc0]">
-                    ${parseInt(token.price) / 1000}
+                    ${token.price * (10 ** token.divisibility) / 1000}
                   </div>
                 </div>
               </td>
               <td className="py-4">
-                <span className="text-[#00d181]">{token.priceChange}</span>
-              </td>
-              <td className="py-4">
                 <div className="space-y-1">
-                  <div>{token.volume}</div>
-                  <div className="text-[#a7afc0]">{token.volumeUSD}</div>
+                  <div>{token.volume} sats</div>
+                  <div className="text-[#a7afc0]">${(token.volume / 1000).toFixed(2)}</div>
                 </div>
               </td>
               <td className="py-4">
                 <div className="space-y-1">
-                  <div>{token.marketCap}</div>
-                  <div className="text-[#a7afc0]">{token.marketCapBTC}</div>
+                  <div>{token.marketCap} sats</div>
+                  <div className="text-[#a7afc0]">${(token.marketCap / 1000).toFixed(2)}</div>
                 </div>
               </td>
               <td className="py-4">{token.trades}</td>

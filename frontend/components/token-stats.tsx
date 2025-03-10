@@ -19,6 +19,12 @@ export function TokenStats({id}: {id: string}) {
         fetchToken()
     }, [])
 
+  if (!token) {
+    return <div>problem</div>
+  }
+
+  const price = token.price * (10 ** token.divisibility)
+
   return (
     <div className="flex items-start gap-6">
       <div className="w-48 h-48 rounded-lg overflow-hidden">
@@ -36,29 +42,25 @@ export function TokenStats({id}: {id: string}) {
             View Info
           </button>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
           <div>
             <div className="text-sm text-[#a7afc0] mb-1">Price</div>
-            <div className="text-lg">{token?.price}</div>
-            <div className="text-sm text-[#a7afc0]">{token?.priceUSD}</div>
-          </div>
-          <div>
-            <div className="text-sm text-[#a7afc0] mb-1">Price% (24h)</div>
-            <div className="text-lg text-[#00d181]">{token?.priceChange}</div>
+            <div className="text-lg">{price} sats</div>
+            <div className="text-sm text-[#a7afc0]">${(price / 1000).toFixed(2)}</div>
           </div>
           <div>
             <div className="text-sm text-[#a7afc0] mb-1">Volume (24h)</div>
-            <div className="text-lg">{token?.volume}</div>
-            <div className="text-sm text-[#a7afc0]">{token?.volumeUSD}</div>
+            <div className="text-lg">{token.volume} sats</div>
+            <div className="text-sm text-[#a7afc0]">${(token.volume / 1000).toFixed(2)}</div>
           </div>
           <div>
             <div className="text-sm text-[#a7afc0] mb-1">Market Cap</div>
-            <div className="text-lg">{token?.marketCap}</div>
-            <div className="text-sm text-[#a7afc0]">{token?.marketCapBTC}</div>
+            <div className="text-lg">{token.marketCap} sats</div>
+            <div className="text-sm text-[#a7afc0]">${(token.marketCap / 1000).toFixed(2)}</div>
           </div>
           <div>
             <div className="text-sm text-[#a7afc0] mb-1">Trades</div>
-            <div className="text-lg">{token?.trades}</div>
+            <div className="text-lg">{token.trades}</div>
           </div>
         </div>
       </div>
