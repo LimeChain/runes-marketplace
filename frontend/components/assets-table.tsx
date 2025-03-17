@@ -13,7 +13,7 @@ import {
 import { ListingsGrid } from '@/components/listings-grid'
 import { EditListingModal } from './edit-listing-modal'
 import { useWalletStore } from "@/store/useWalletStore"
-import { Listing, Token } from "@/lib/utils"
+import { Listing, Token } from "@/lib/types"
 
 const ibmPlexMono = IBM_Plex_Mono({ subsets: ['latin'], weight: ['400'] })
 
@@ -124,7 +124,6 @@ export function AssetsTable() {
                   <th className="pb-4">Name</th>
                   <th className="pb-4">My Amount</th>
                   <th className="pb-4">Price</th>
-                  <th className="pb-4">Price%</th>
                   <th className="pb-4">Volume</th>
                   <th className="pb-4">Market Cap</th>
                   <th className="pb-4">Trades</th>
@@ -156,22 +155,19 @@ export function AssetsTable() {
                     <td className="py-4">
                       <div className="space-y-1">
                         <div className={ibmPlexMono.className}>{token.price}</div>
-                        <div className={`${ibmPlexMono.className} text-[#a7afc0]`}>{token.priceUSD}</div>
+                        <div className={`${ibmPlexMono.className} text-[#a7afc0]`}>{token.price / 1000}</div>
                       </div>
-                    </td>
-                    <td className="py-4">
-                      <span className="text-[#00d181]">{token.priceChange}</span>
                     </td>
                     <td className="py-4">
                       <div className="space-y-1">
                         <div>{token.volume}</div>
-                        <div className="text-[#a7afc0]">{token.volumeUSD}</div>
+                        <div className="text-[#a7afc0]">{token.volume / 1000}</div>
                       </div>
                     </td>
                     <td className="py-4">
                       <div className="space-y-1">
                         <div>{token.marketCap}</div>
-                        <div className="text-[#a7afc0]">{token.marketCapBTC}</div>
+                        <div className="text-[#a7afc0]">{token.marketCap / 1000}</div>
                       </div>
                     </td>
                     <td className="py-4">{token.trades}</td>

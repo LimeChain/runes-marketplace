@@ -2,8 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
-import { VerifiedIcon } from "lucide-react";
-import { Token } from "@/lib/utils";
+import { Token } from "@/lib/types";
 
 export function MarketTable() {
   const router = useRouter();

@@ -2,7 +2,8 @@
 
 import { Button } from "@/components/ui/button"
 import { IBM_Plex_Mono } from 'next/font/google'
-import { Listing, shortAddress } from '@/lib/utils'
+import { shortAddress } from '@/lib/utils'
+import { Listing } from '@/lib/types'
 
 const ibmPlexMono = IBM_Plex_Mono({ subsets: ['latin'], weight: ['400'] })
 

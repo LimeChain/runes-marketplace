@@ -38,7 +38,7 @@ export function ImportWalletModal({ open, onOpenChange, onCancel, onImport }: Im
 
       let pk
 
-      // TODO: hack to only use private keys with even public key
+      // Hack to only use private keys with even public key
       for (let i = 0; i < 100; i++) {
         pk = xpriv.deriveChild(`m/86'/0'/0'/0/${i}`)
         if (pk.privateKey.toPublicKey().toString().startsWith('02')) {

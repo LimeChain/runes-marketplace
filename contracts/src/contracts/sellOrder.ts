@@ -70,7 +70,7 @@ export class SellOrder extends SmartContract {
         prevTx: PrevTx,
         paymentPrevout: ByteString,
         stateAmount: bigint,
-        stateExchangeRate: bigint, // TODO: Currently integer, shows how many satoshis for 1 token, add reverse logic (other method? We can use price for mSat or nSat)
+        stateExchangeRate: bigint,
         purchasedAmount: bigint,
         buyerOutput: ByteString,
         amountReminderHints: FixedArray<bigint, 4>,
@@ -96,13 +96,11 @@ export class SellOrder extends SmartContract {
         assert(shPreimage.inputNumber == toByteString('00000000'))
 
         // Check the remaining tokens are more than the threshold
-        // TODO: > 0 check needed?
         assert(stateAmount - purchasedAmount > this.minTokenThreshold)
 
         const newAmount = stateAmount - purchasedAmount
         const stateOut = SellOrder.getStateOut(newAmount, stateExchangeRate)
 
-        // TODO: current max is u15 (32K). Think about fixes?
         const btcAmount = OpMul.u15Mul(purchasedAmount, stateExchangeRate)
         const encodedAmount = SellOrder.encodeBtcAmount(btcAmount)
 
@@ -116,7 +114,6 @@ export class SellOrder extends SmartContract {
                 // Runes OP_RETURN
                 SellOrder.runeOut(this.runeId, purchasedAmount, toByteString("03"), amountReminderHints, amountMultiplierHints) +
                 // Buyer's output
-                // TODO: send remaining amount minus fees to this output instead of creating additional change
                 SellOrder.DUSTSAT +
                 buyerOutput +
                 // Seller's output
@@ -132,7 +129,7 @@ export class SellOrder extends SmartContract {
         prevTx: PrevTx,
         paymentPrevout: ByteString,
         stateAmount: bigint,
-        stateExchangeRate: bigint, // TODO: Currently integer, shows how many satoshis for 1 token, add reverse logic (other method? We can use price for mSat or nSat)
+        stateExchangeRate: bigint,
         buyerOutput: ByteString,
         amountReminderHints: FixedArray<bigint, 4>,
         amountMultiplierHints: FixedArray<bigint, 4>
@@ -156,7 +153,6 @@ export class SellOrder extends SmartContract {
         // Check counter covenant is called via first input.
         assert(shPreimage.inputNumber == toByteString('00000000'))
 
-        // TODO: current max is u15 (32K). Think about fixes?
         const btcAmount = OpMul.u15Mul(stateAmount, stateExchangeRate)
         const encodedAmount = SellOrder.encodeBtcAmount(btcAmount)
 
@@ -249,7 +245,7 @@ export class SellOrder extends SmartContract {
     static rshift7(num: bigint, reminderHint: bigint, multiplierHint: bigint): bigint {
         assert(reminderHint >= 0n && reminderHint < 128n)
         assert(SellOrder.mul128(multiplierHint) + reminderHint == num)
-        return multiplierHint // TODO: needed?
+        return multiplierHint
     }
     
     @method()

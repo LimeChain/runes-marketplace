@@ -31,7 +31,7 @@ export function WalletDropdown({ onDisconnect }: WalletDropdownProps) {
     onDisconnect()
   }
 
-  // TODO: get price from coingecko
+  // BTC price is hardcoded to $100,000
   const btcBalance = Number.parseInt(balance) / 100_000_000
   const balanceUSD = (btcBalance * 100_000).toFixed(2)
 

@@ -12,7 +12,8 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useWalletStore } from "@/store/useWalletStore"
-import { encodeLEB128, Token } from '@/lib/utils'
+import { encodeLEB128 } from '@/lib/utils'
+import { Token } from '@/lib/types'
 import { createInstance, createSellOrderTx } from '@/lib/contract-handler'
 
 const ibmPlexMono = IBM_Plex_Mono({ subsets: ['latin'], weight: ['400'] })

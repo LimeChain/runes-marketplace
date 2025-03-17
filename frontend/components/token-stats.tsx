@@ -1,6 +1,6 @@
 'use client'
 
-import { Token } from '@/lib/utils'
+import { Token } from '@/lib/types'
 import { VerifiedIcon } from 'lucide-react'
 import { useState, useEffect } from 'react'
 

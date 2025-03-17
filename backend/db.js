@@ -12,8 +12,6 @@ let /** @type {StatementSync} */ getListingsQuery,
   /** @type {StatementSync} */ getOpenListingsForTokenQuery;
 
 export function initDb() {
-  // database.exec(`DROP TABLE IF EXISTS listing`)
-  // TODO: we can remove the status and use the closeTimestamp
   database.exec(`
     CREATE TABLE IF NOT EXISTS listing(
       id TEXT PRIMARY KEY,
@@ -58,7 +56,6 @@ export function getListings() {
   return /** @type {Listing[]} */ (getListingsQuery.all());
 }
 
-// TODO: runeID in another table?
 /**
  * Creates a new listing
  *

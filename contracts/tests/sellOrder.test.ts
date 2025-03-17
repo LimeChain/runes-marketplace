@@ -243,7 +243,6 @@ function createSellOrderTx(
     const tokenAmountLeb128 = encodeLEB128(tokenAmount)
     const tokenAmountLE = toHex(tokenAmount)
     const exchangeRateLE = toHex(exchangeRate)
-    // TODO: check the size
     const opRetStateScript0 = new btc.Script(
         `6a02${tokenAmountLE}01${exchangeRateLE}`
     ) // Amount: 6099; ExchangeRate: 10
@@ -492,7 +491,6 @@ async function createUpdateExchangeRateTx(
     const tokenAmountLeb128 = encodeLEB128(tokenAmount)
     const tokenAmountLE = toHex(tokenAmount)
     const exchangeRateLE = toHex(exchangeRate)
-    // TODO: check the size
     const opRetStateScript = new btc.Script(
         `6a02${tokenAmountLE}01${exchangeRateLE}`
     ) // Amount: 5099; ExchangeRate: 20

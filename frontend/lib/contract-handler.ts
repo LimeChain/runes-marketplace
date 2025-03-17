@@ -219,7 +219,6 @@ export async function createBuyTx(
   let tokenPurchaseAmountLE = toHex(tokenPurchaseAmount);
 
   // Need to add '00' if the last byte is >= 127, otherwise the vm interpets it as negative
-  // TODO: add to other methods and LE string as well?
   if (parseInt(tokenPurchaseAmountLE.slice(-2), 16) > 127) {
     tokenPurchaseAmountLE += "00";
   }

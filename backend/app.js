@@ -33,7 +33,6 @@ app.post("/listing/new", async (req, res) => {
     return
   }
 
-  // TODO: combine close and open in one TX?
   if (listing.prevOut) {
     const successClose = closeListing(listing.prevOut);
 
@@ -43,7 +42,7 @@ app.post("/listing/new", async (req, res) => {
     }
   }
 
-  console.log(listing.tokenAmount)
+  // Create new listing only if there are remaining tokens
   if (Number(listing.tokenAmount) !== 0) {
     const success = createListing(listing);
     res.json({ success });
@@ -191,7 +190,6 @@ async function getTokenData(runeId) {
   const price = listings.filter((l) => l.closeTimestamp === null)[0]?.exchangeRate || 0;
   const marketCap = price * supply / runeData.entry.divisibility;
 
-  // TODO: calculate only the bought tokens by substracting the amount from prevtx
   const ONE_DAY = 60 * 60 * 24;
   const currentTimestamp = Date.now() / 1000;
   const volume = listings

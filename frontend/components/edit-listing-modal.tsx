@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Listing } from '@/lib/utils'
+import { Listing } from '@/lib/types'
 
 const ibmPlexMono = IBM_Plex_Mono({ subsets: ['latin'], weight: ['400'] })
 

@@ -11,7 +11,8 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
-import { encodeLEB128, Listing, Tx } from "@/lib/utils";
+import { encodeLEB128 } from "@/lib/utils";
+import { Listing, Tx } from "@/lib/types";
 import { createBuyTx, getInstance } from "@/lib/contract-handler";
 import { useWalletStore } from "@/store/useWalletStore";
 
@@ -27,8 +28,7 @@ export function BuyModal({ open, onOpenChange, listing }: BuyModalProps) {
   const amount = listing.tokenAmount / 10 ** listing.divisibility;
   const threshold = listing.minTokenThreshold / 10 ** listing.divisibility;
   const [selectedAmount, setSelectedAmount] = useState(amount);
-  const { privateKey, address } = useWalletStore();
-  const balance = 0; // TODO: get from wallet
+  const { privateKey, address, balance } = useWalletStore();
 
   const percentages = [
     { label: "25%", value: 25 },
@@ -178,7 +178,6 @@ export function BuyModal({ open, onOpenChange, listing }: BuyModalProps) {
                 onValueChange={([value]) => setSelectedAmount(value)}
                 onValueCommit={([value]) => {
                   if (value !== amount && value > amount - threshold) {
-                    // TODO: show message
                     setSelectedAmount(amount - threshold);
                   }
                 }}

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { ListingsGrid } from '@/components/listings-grid'
 import { BuyModal } from '@/components/buy-modal'
 import { useWalletStore } from '@/store/useWalletStore'
-import { Listing } from '@/lib/utils'
+import { Listing } from '@/lib/types'
 
 export function TokenListings({id}: {id: string}) {
   const [activeTab, setActiveTab] = useState<'all-listings' | 'my-listings'>('all-listings')

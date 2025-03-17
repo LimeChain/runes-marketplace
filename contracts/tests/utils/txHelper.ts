@@ -66,7 +66,6 @@ export function randomPrivateKey() {
 export async function fetchP2WPKHUtxos(address: btc.Address): Promise<unknown[]> {
     const network = process.env.NETWORK || 'local'
 
-    // TODO: switch to local
     if (network === 'regtest') {
         return [
             {
@@ -83,8 +82,6 @@ export async function fetchP2WPKHUtxos(address: btc.Address): Promise<unknown[]>
         network === 'REGTEST'
             ? `https://explorer.bc-2.jp/api/address/${address.toString()}/utxo`
             : `http://127.0.0.1:18443`
-
-    // TODO make post to local if network is regtest
 
     const res: unknown[] = []
     try {
