@@ -7,9 +7,14 @@ The specification is [here](./Efficient%20Runes%20Marketplace%20Specification.pd
 ## Requirements
 - `node >=v22.13.0`
 - `make`
+- `jq`
 - `docker`
 
 ## Build
+
+### Create .env file
+> [!TIP]
+> You can use the `.env.example`
 
 ### Start the infrastructure
 ```bash
@@ -18,7 +23,7 @@ cd infrastructure
 ```
 
 > [!WARNING]  
-> The script works on macOS. If you're using a different OS, change the `ord` directory in the `Makefile` based on this [table](https://docs.ordinals.com/guides/reindexing.html)
+> The script works on macOS. If you're using a different OS, change the `ord` directory in `setup_ord.sh` based on this [table](https://docs.ordinals.com/guides/reindexing.html)
 
 ### Compile the contracts
 

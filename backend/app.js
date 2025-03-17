@@ -15,11 +15,7 @@ const app = express();
 
 const PORT = 3030;
 
-const ORD_URL = "http://localhost:1234";
-
-const BITCOIND_USER = "regtest";
-const BITCOIND_PASS = "regtest";
-const BITCOIND_URL = `http://localhost:8332`;
+const { BTC_CORE_RPC, ORD_URL, BTC_RPC_USER, BTC_RPC_PASS } = process.env
 
 app.use(express.json());
 
@@ -227,10 +223,10 @@ async function getTokenData(runeId) {
  * @returns {Promise<{error: string}>}
  */
 async function broadcastTx(rawTx) {
-  const response = await fetch(`${BITCOIND_URL}`, {
+  const response = await fetch(`${BTC_CORE_RPC}`, {
     method: "POST",
     headers: {
-      Authorization: `Basic ${btoa(BITCOIND_USER + ":" + BITCOIND_PASS)}`,
+      Authorization: `Basic ${btoa(BTC_RPC_USER + ":" + BTC_RPC_PASS)}`,
       "content-type": "text/plain;",
     },
     body: JSON.stringify({
