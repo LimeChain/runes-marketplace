@@ -1,0 +1,26 @@
+services:
+  bitcoin:
+    image: bitcoind-inq
+    pull_policy: never
+    restart: always
+    container_name: bitcoind-node
+    volumes:
+      - ./bitcoin.conf:/bitcoin/.bitcoin/bitcoin.conf
+      - ./bitcoin-data:/bitcoin/.bitcoin  
+    ports:
+      - 8333:8333   #p2p network
+      - 8332:8332   #rpc
+
+  ordinals:
+    image: ordinals/ord
+    restart: always
+    container_name: ord
+    ports:
+      - 1234:1234
+    environment:
+      ORD_BITCOIN_RPC_URL: "http://host.docker.internal:8332"
+      ORD_BITCOIN_RPC_USERNAME: "regtest"
+      ORD_BITCOIN_RPC_PASSWORD: "regtest"
+    command: 'ord --index-runes --index-addresses --chain regtest server --http-port=1234'
+    depends_on:
+      - bitcoin

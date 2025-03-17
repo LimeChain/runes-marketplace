@@ -1,0 +1,12 @@
+mode: separate-outputs
+
+etching:
+  rune: THE•BEST•RUNE•TOKEN
+  divisibility: 1
+  premine: 100.0
+  supply: 100.0
+  symbol: 🍋
+  turbo: true
+
+inscriptions:
+- file: logo.svg

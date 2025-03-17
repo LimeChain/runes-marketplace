@@ -1,7 +1,5 @@
 // @ts-check
 import express from "express";
-// @ts-ignore
-import btc from "bitcore-lib-inquisition";
 import {
   initDb,
   getListings,
