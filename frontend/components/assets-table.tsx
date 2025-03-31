@@ -24,7 +24,9 @@ export function AssetsTable() {
   const [listings, setListings] = useState<Listing[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const { address } = useWalletStore()
+  const { address, btcPrice } = useWalletStore()
+
+  const satPrice = btcPrice / 100_000_000
 
   useEffect(() => {
     const fetchTokens = async () => {
@@ -155,19 +157,19 @@ export function AssetsTable() {
                     <td className="py-4">
                       <div className="space-y-1">
                         <div className={ibmPlexMono.className}>{token.price}</div>
-                        <div className={`${ibmPlexMono.className} text-[#a7afc0]`}>{token.price / 1000}</div>
+                        <div className={`${ibmPlexMono.className} text-[#a7afc0]`}>{(token.price * satPrice).toFixed(2)}</div>
                       </div>
                     </td>
                     <td className="py-4">
                       <div className="space-y-1">
                         <div>{token.volume}</div>
-                        <div className="text-[#a7afc0]">{token.volume / 1000}</div>
+                        <div className="text-[#a7afc0]">{(token.volume * satPrice).toFixed(2)}</div>
                       </div>
                     </td>
                     <td className="py-4">
                       <div className="space-y-1">
                         <div>{token.marketCap}</div>
-                        <div className="text-[#a7afc0]">{token.marketCap / 1000}</div>
+                        <div className="text-[#a7afc0]">{(token.marketCap * satPrice).toFixed(2)}</div>
                       </div>
                     </td>
                     <td className="py-4">{token.trades}</td>

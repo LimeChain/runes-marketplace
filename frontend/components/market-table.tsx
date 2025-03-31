@@ -3,11 +3,15 @@
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { Token } from "@/lib/types";
+import { useWalletStore } from "@/store/useWalletStore"
 
 export function MarketTable() {
   const router = useRouter();
   const [tokens, setTokens] = useState<Token[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const { btcPrice } = useWalletStore()
+
+  const satPrice = btcPrice / 100_000_000
 
   const handleRowClick = (tokenId: string) => {
     router.push(`/token/${tokenId}`);
@@ -74,20 +78,20 @@ export function MarketTable() {
                 <div className="space-y-1">
                   <div>{token.price  * (10 ** token.divisibility)} sats</div>
                   <div className="text-[#a7afc0]">
-                    ${token.price * (10 ** token.divisibility) / 1000}
+                    ${(token.price * (10 ** token.divisibility) * satPrice).toFixed(2)}
                   </div>
                 </div>
               </td>
               <td className="py-4">
                 <div className="space-y-1">
                   <div>{token.volume} sats</div>
-                  <div className="text-[#a7afc0]">${(token.volume / 1000).toFixed(2)}</div>
+                  <div className="text-[#a7afc0]">${(token.volume * satPrice).toFixed(2)}</div>
                 </div>
               </td>
               <td className="py-4">
                 <div className="space-y-1">
                   <div>{token.marketCap} sats</div>
-                  <div className="text-[#a7afc0]">${(token.marketCap / 1000).toFixed(2)}</div>
+                  <div className="text-[#a7afc0]">${(token.marketCap * satPrice).toFixed(2)}</div>
                 </div>
               </td>
               <td className="py-4">{token.trades}</td>

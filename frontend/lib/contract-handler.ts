@@ -5,7 +5,8 @@ import * as ecurve from "ecurve";
 import BigInteger from "bigi";
 import { sha256 } from "js-sha256";
 import artifact from "@/contracts/sellOrder.json";
-import { encodeLEB128, toHex, Tx, TxIn, TxOut } from "./utils";
+import { encodeLEB128, toHex } from "./utils";
+import { Tx, TxIn, TxOut } from "./types"
 
 const DISABLE_KEYSPEND_PUBKEY =
   "0250929b74c1a04954b78b4b6035e97a5e078a5a0f28ec96d547bfee9ace803ac0";

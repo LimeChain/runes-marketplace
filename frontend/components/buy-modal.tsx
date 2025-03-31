@@ -1,8 +1,13 @@
 "use client";
 
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, CircleAlert } from "lucide-react";
 import { useState } from "react";
 import { IBM_Plex_Mono } from "next/font/google";
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+} from "@/components/ui/alert"
 import {
   Dialog,
   DialogContent,
@@ -28,7 +33,8 @@ export function BuyModal({ open, onOpenChange, listing }: BuyModalProps) {
   const amount = listing.tokenAmount / 10 ** listing.divisibility;
   const threshold = listing.minTokenThreshold / 10 ** listing.divisibility;
   const [selectedAmount, setSelectedAmount] = useState(amount);
-  const { privateKey, address, balance } = useWalletStore();
+  const { privateKey, address, balance, btcPrice } = useWalletStore();
+  const [showThresholdError, setShowThresholdError] = useState(false)
 
   const percentages = [
     { label: "25%", value: 25 },
@@ -36,6 +42,8 @@ export function BuyModal({ open, onOpenChange, listing }: BuyModalProps) {
     { label: "75%", value: 75 },
     { label: "100%", value: 100 },
   ];
+
+  const satPrice = btcPrice / 100_000_000
 
   const handlePercentageClick = (percentage: number) => {
     setSelectedAmount((amount * percentage) / 100);
@@ -146,7 +154,7 @@ export function BuyModal({ open, onOpenChange, listing }: BuyModalProps) {
                 {listing.exchangeRate * 10 ** listing.divisibility} sats
               </div>
               <div className={`${ibmPlexMono.className} text-[#a7afc0]`}>
-                ${(listing.exchangeRate * 10 ** listing.divisibility) / 1000}
+                ${(listing.exchangeRate * 10 ** listing.divisibility * satPrice).toFixed(2)}
               </div>
             </div>
           </div>
@@ -169,6 +177,13 @@ export function BuyModal({ open, onOpenChange, listing }: BuyModalProps) {
               ))}
             </div>
 
+            <Alert className={`bg-[#16181b] ${showThresholdError ? "block" : "hidden"}`} variant="destructive">
+                <CircleAlert className="h-4 w-4 text-white" />
+                <AlertTitle>Cannot purchase the specified amount!</AlertTitle>
+                <AlertDescription>
+                  You should either buy less than <pre className="inline">{amount - threshold}</pre> tokens or fill the whole listing.
+                </AlertDescription>
+              </Alert>
             <div className="bg-[#16181b] rounded-lg p-4">
               <div className={`${ibmPlexMono.className} text-3xl mb-4`}>
                 {selectedAmount.toLocaleString()}
@@ -178,7 +193,14 @@ export function BuyModal({ open, onOpenChange, listing }: BuyModalProps) {
                 onValueChange={([value]) => setSelectedAmount(value)}
                 onValueCommit={([value]) => {
                   if (value !== amount && value > amount - threshold) {
+                    console.log('test')
                     setSelectedAmount(amount - threshold);
+
+                    setShowThresholdError(true)
+                    setTimeout(() => {
+                      setShowThresholdError(false)
+                    }, 5000)
+                  } else {
                   }
                 }}
                 max={amount}
@@ -219,7 +241,7 @@ export function BuyModal({ open, onOpenChange, listing }: BuyModalProps) {
                 <div className="text-right">
                   <div>{totalValue.toLocaleString()} sats</div>
                   <div className="text-[#a7afc0]">
-                    ${(totalValue / 1000).toFixed(2)}
+                    ${(totalValue * satPrice).toFixed(2)}
                   </div>
                 </div>
               </div>

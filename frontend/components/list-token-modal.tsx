@@ -31,7 +31,9 @@ export function ListTokenModal({ open, onOpenChange }: ListTokenModalProps) {
   const [priceInSats, setPriceInSats] = useState("0")
   const [threshold, setThreshold] = useState(10)
   const [tokens, setTokens] = useState<Token[]>([])
-  const { privateKey, address } = useWalletStore()
+  const { privateKey, address, btcPrice } = useWalletStore()
+
+  const satPrice = btcPrice / 100_000_000
 
   useEffect(() => {
     const fetchTokens = async () => {
@@ -269,7 +271,7 @@ export function ListTokenModal({ open, onOpenChange }: ListTokenModalProps) {
           <span>Price per token</span>
           <div className="text-right">
             <span className={`${ibmPlexMono.className}`}>{priceInSats} sats</span>
-            <span className={`${ibmPlexMono.className} block text-[#a7afc0]`}>${Number(priceInSats) / 1000}</span>
+            <span className={`${ibmPlexMono.className} block text-[#a7afc0]`}>${Number(priceInSats) * satPrice}</span>
           </div>
         </div>
 

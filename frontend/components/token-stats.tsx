@@ -1,11 +1,15 @@
 'use client'
 
 import { Token } from '@/lib/types'
+import { useWalletStore } from '@/store/useWalletStore'
 import { VerifiedIcon } from 'lucide-react'
 import { useState, useEffect } from 'react'
 
 export function TokenStats({id}: {id: string}) {
   const [token, setToken] = useState<Token | null>(null)
+  const { btcPrice } = useWalletStore()
+
+  const satPrice = btcPrice / 100_000_000
   useEffect(() => {
       const fetchToken = async () => {
         try {
@@ -46,17 +50,17 @@ export function TokenStats({id}: {id: string}) {
           <div>
             <div className="text-sm text-[#a7afc0] mb-1">Price</div>
             <div className="text-lg">{price} sats</div>
-            <div className="text-sm text-[#a7afc0]">${(price / 1000).toFixed(2)}</div>
+            <div className="text-sm text-[#a7afc0]">${(price * satPrice).toFixed(2)}</div>
           </div>
           <div>
             <div className="text-sm text-[#a7afc0] mb-1">Volume (24h)</div>
             <div className="text-lg">{token.volume} sats</div>
-            <div className="text-sm text-[#a7afc0]">${(token.volume / 1000).toFixed(2)}</div>
+            <div className="text-sm text-[#a7afc0]">${(token.volume * satPrice).toFixed(2)}</div>
           </div>
           <div>
             <div className="text-sm text-[#a7afc0] mb-1">Market Cap</div>
             <div className="text-lg">{token.marketCap} sats</div>
-            <div className="text-sm text-[#a7afc0]">${(token.marketCap / 1000).toFixed(2)}</div>
+            <div className="text-sm text-[#a7afc0]">${(token.marketCap * satPrice).toFixed(2)}</div>
           </div>
           <div>
             <div className="text-sm text-[#a7afc0] mb-1">Trades</div>

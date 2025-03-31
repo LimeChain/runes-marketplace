@@ -14,7 +14,7 @@ globalThis.Buffer = globalThis.Buffer || Buffer;
 
 export function TopNav() {
   const [showWalletModal, setShowWalletModal] = useState(false)
-  const { address, setAddress, setBalance, clear } = useWalletStore()
+  const { address, setAddress, setBalance, setBtcPrice, clear } = useWalletStore()
 
   const handleConnect = (connectedAddress: string) => {
     setAddress(connectedAddress)
@@ -39,6 +39,15 @@ export function TopNav() {
       }
     }
 
+    const fetchBtcPrice = async () => {
+      const URL = "https://min-api.cryptocompare.com/data/generateAvg?fsym=BTC&tsym=USD&e=coinbase"
+      const response = await fetch(URL)
+      const data = await response.json()
+      const price = data["RAW"]["PRICE"]
+      setBtcPrice(price)
+    }
+
+    fetchBtcPrice()
     if (address) {
       fetchBalance() // Fetch immediately when address is set
       intervalId = setInterval(fetchBalance, 10000) // Then fetch every 10 seconds
@@ -49,7 +58,7 @@ export function TopNav() {
         clearInterval(intervalId)
       }
     }
-  }, [address, setBalance])
+  }, [address])
 
   return (
     <>

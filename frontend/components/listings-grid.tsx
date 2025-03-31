@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button"
 import { IBM_Plex_Mono } from 'next/font/google'
 import { shortAddress } from '@/lib/utils'
 import { Listing } from '@/lib/types'
+import { useWalletStore } from "@/store/useWalletStore"
 
 const ibmPlexMono = IBM_Plex_Mono({ subsets: ['latin'], weight: ['400'] })
 
@@ -20,6 +21,9 @@ export function ListingsGrid({
   onBuy,
   onEditListing 
 }: ListingsGridProps) {
+  const { btcPrice } = useWalletStore()
+
+  const satPrice = btcPrice / 100_000_000
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
       {listings.map((listing) => (
@@ -36,7 +40,7 @@ export function ListingsGrid({
               {listing.exchangeRate * (10 ** listing.divisibility)} sats / {listing.runeSymbol}
             </div>
             <div className={`${ibmPlexMono.className} text-[#a7afc0]`}>
-              ${listing.exchangeRate * (10 ** listing.divisibility) / 1000}
+              ${(listing.exchangeRate * (10 ** listing.divisibility) * satPrice).toFixed(2)}
             </div>
           </div>
           <div className={`${ibmPlexMono.className} text-[#a7afc0] text-sm border-t border-b border-[#2e343c] my-4 py-4`}>

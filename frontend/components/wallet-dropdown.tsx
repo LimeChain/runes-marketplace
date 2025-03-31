@@ -23,7 +23,7 @@ interface WalletDropdownProps {
 export function WalletDropdown({ onDisconnect }: WalletDropdownProps) {
   const router = useRouter()
   const [showListToken, setShowListToken] = useState(false)
-  const { address, seedPhrase, balance, clear } = useWalletStore()
+  const { address, balance, btcPrice, clear } = useWalletStore()
   const shortAddress = address ? `${address.slice(0, 8)}...${address.slice(-4)}` : ''
 
   const handleDisconnect = () => {
@@ -31,9 +31,8 @@ export function WalletDropdown({ onDisconnect }: WalletDropdownProps) {
     onDisconnect()
   }
 
-  // BTC price is hardcoded to $100,000
   const btcBalance = Number.parseInt(balance) / 100_000_000
-  const balanceUSD = (btcBalance * 100_000).toFixed(2)
+  const balanceUSD = (btcBalance * btcPrice).toFixed(2)
 
   return (
     <>

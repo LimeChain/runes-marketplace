@@ -1,7 +1,5 @@
-import { VerifiedIcon } from 'lucide-react'
 import { TokenStats } from "@/components/token-stats"
 import { TokenListings } from "@/components/token-listings"
-import { Token } from '@/lib/utils';
 
 export default async function TokenPage({ params }: { params: { id: string } }) {
   const runeId = decodeURIComponent(params.id)

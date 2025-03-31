@@ -22,7 +22,7 @@ cd infrastructure
 ./setup_ord.sh && make keep-mining SEC=20
 ```
 
-> [!WARNING]  
+> [!WARNING]
 > The script works on macOS. If you're using a different OS, change the `ord` directory in `setup_ord.sh` based on this [table](https://docs.ordinals.com/guides/reindexing.html)
 
 ### Compile the contracts

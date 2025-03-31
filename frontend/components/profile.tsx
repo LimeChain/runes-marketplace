@@ -12,7 +12,7 @@ import { ListTokenModal } from "./list-token-modal"
 const ibmPlexMono = IBM_Plex_Mono({ subsets: ['latin'], weight: ['400'] })
 export function Profile() {
   const [showListTokenModal, setShowListTokenModal] = useState(false)
-  const { address, balance } = useWalletStore()
+  const { address, balance, btcPrice } = useWalletStore()
   const shortAddress = address ? `${address.slice(0, 6)}...${address.slice(-4)}` : ''
 
   const copyAddress = () => {
@@ -24,9 +24,8 @@ export function Profile() {
     }
   }
 
-  // BTC price is hardcoded to $100,000
   const btcBalance = Number.parseInt(balance) / 100_000_000
-  const balanceUSD = (btcBalance * 100_000).toFixed(2)
+  const balanceUSD = (btcBalance * btcPrice).toFixed(2)
 
   return (
     <div className="border-b border-[#2e343c]">

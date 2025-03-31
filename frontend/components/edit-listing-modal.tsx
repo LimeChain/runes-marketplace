@@ -11,6 +11,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Listing } from '@/lib/types'
+import { useWalletStore } from '@/store/useWalletStore'
 
 const ibmPlexMono = IBM_Plex_Mono({ subsets: ['latin'], weight: ['400'] })
 
@@ -31,7 +32,10 @@ export function EditListingModal({
   onCancel,
   onCancelListing
 }: EditListingModalProps) {
-  const totalValueUSD = (listing.tokenAmount * listing.exchangeRate * 0.0001).toFixed(0) // Simplified USD calculation
+  const { btcPrice } = useWalletStore()
+
+  const satPrice = btcPrice / 100_000_000
+  const totalValueUSD = (listing.tokenAmount * listing.exchangeRate * satPrice / (10 ** listing.divisibility)).toFixed(2) // Simplified USD calculation
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
